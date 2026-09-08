@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
+import { formatTanggal } from "../utils/helpers";
 
 function ParentProfil() {
   const { user } = useAuth();
@@ -41,42 +42,13 @@ function ParentProfil() {
 
   const fields = [
     { label: "Nama", value: orangTua.nama },
-    { label: "NIK", value: orangTua.nik || "-" },
-    {
-      label: "Jenis Kelamin",
-      value: orangTua.jenisKelamin === "L" ? "Laki-laki" : "Perempuan",
-    },
-    { label: "Umur", value: orangTua.umur != null ? `${orangTua.umur} thn` : "-" },
-    { label: "Jumlah Anak", value: jumlahAnak },
     { label: "Nomor HP", value: orangTua.telepon || "-" },
+    { label: "Umur", value: orangTua.umur != null ? `${orangTua.umur} thn` : "-" },
     {
-      label: "Status KB",
-      value: (
-        <span
-          className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-            orangTua.statusKb === "Ya"
-              ? "bg-primary-100 text-primary-700"
-              : "bg-gray-100 text-gray-600"
-          }`}
-        >
-          {orangTua.statusKb || "Tidak"}
-        </span>
-      ),
+      label: "Tanggal Lahir",
+      value: formatTanggal(orangTua.tanggalLahir),
     },
-    {
-      label: "Status BPJS",
-      value: (
-        <span
-          className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-            orangTua.statusBPJS === "Ya"
-              ? "bg-primary-100 text-primary-700"
-              : "bg-gray-100 text-gray-600"
-          }`}
-        >
-          {orangTua.statusBPJS || "Tidak"}
-        </span>
-      ),
-    },
+    { label: "Jumlah Anak", value: jumlahAnak },
     { label: "Alamat", value: orangTua.alamat || "-" },
   ];
 

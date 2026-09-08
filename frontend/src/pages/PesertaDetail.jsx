@@ -14,12 +14,9 @@ import {
 } from "recharts";
 
 const kategoriColors = {
-  Bayi: "bg-primary-100 text-primary-700",
-  Batita: "bg-blue-100 text-blue-700",
-  Anak: "bg-amber-100 text-amber-700",
-  Remaja: "bg-purple-100 text-purple-700",
-  Dewasa: "bg-green-100 text-green-700",
-  Pralansia: "bg-orange-100 text-orange-700",
+  Balita: "bg-primary-100 text-primary-700",
+  Apras: "bg-purple-100 text-purple-700",
+  Produktif: "bg-green-100 text-green-700",
   Lansia: "bg-red-100 text-red-700",
   Lainnya: "bg-gray-100 text-gray-600",
 };

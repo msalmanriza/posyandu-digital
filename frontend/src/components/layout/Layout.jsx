@@ -35,7 +35,7 @@ function Layout() {
           >
             ☰
           </button>
-          <h1 className="font-bold text-primary-600">Posyandu Digital</h1>
+          <h1 className="font-bold text-primary-600">Posyandu ILP</h1>
         </header>
         <main className="flex-1 p-4 lg:p-8">
           <Outlet />

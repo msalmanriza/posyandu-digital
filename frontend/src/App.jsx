@@ -19,8 +19,6 @@ import ParentDashboard from "./pages/ParentDashboard";
 import ParentProfil from "./pages/ParentProfil";
 import ParentPeserta from "./pages/ParentPeserta";
 import ParentPesertaDetail from "./pages/ParentPesertaDetail";
-import ParentPenimbangan from "./pages/ParentPenimbangan";
-import ParentImunisasi from "./pages/ParentImunisasi";
 import ParentJadwal from "./pages/ParentJadwal";
 
 const PesertaDetail = lazy(() => import("./pages/PesertaDetail"));
@@ -52,8 +50,6 @@ function App() {
               <Route path="/parent/profil" element={<ParentProfil />} />
               <Route path="/parent/peserta" element={<ParentPeserta />} />
               <Route path="/parent/peserta/:id" element={<ParentPesertaDetail />} />
-              <Route path="/parent/penimbangan" element={<ParentPenimbangan />} />
-              <Route path="/parent/imunisasi" element={<ParentImunisasi />} />
               <Route path="/parent/jadwal" element={<ParentJadwal />} />
               <Route path="/orang-tua" element={<OrangTua />} />
               <Route path="/peserta" element={<Peserta />} />

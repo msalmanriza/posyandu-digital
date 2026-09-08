@@ -29,14 +29,11 @@ export const getKategoriUmur = (tanggalLahir) => {
     (now.getFullYear() - lahir.getFullYear()) * 12 +
     (now.getMonth() - lahir.getMonth());
 
-  if (bulan >= 0 && bulan <= 11) return "Bayi";
-  if (bulan >= 12 && bulan <= 35) return "Batita";
-  if (bulan >= 36 && bulan <= 119) return "Anak";
+  if (bulan >= 1 && bulan < 60) return "Balita";
+  if (bulan >= 60 && bulan < 228) return "Apras";
 
   const tahun = bulan / 12;
-  if (tahun >= 10 && tahun < 19) return "Remaja";
-  if (tahun >= 19 && tahun < 45) return "Dewasa";
-  if (tahun >= 45 && tahun < 60) return "Pralansia";
+  if (tahun >= 19 && tahun < 60) return "Produktif";
   if (tahun >= 60) return "Lansia";
   return "Lainnya";
 };

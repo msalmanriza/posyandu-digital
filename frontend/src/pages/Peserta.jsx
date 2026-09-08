@@ -26,22 +26,16 @@ const initialForm = {
 
 const kategoriOptions = [
   { value: "Semua", label: "Semua Kategori" },
-  { value: "Bayi", label: "Bayi (0-11 bln)" },
-  { value: "Batita", label: "Batita (12-35 bln)" },
-  { value: "Anak", label: "Anak (36 bln - 9 thn)" },
-  { value: "Remaja", label: "Remaja (10-18 thn)" },
-  { value: "Dewasa", label: "Dewasa (19-44 thn)" },
-  { value: "Pralansia", label: "Pralansia (45-59 thn)" },
+  { value: "Balita", label: "Balita (1-59 bln)" },
+  { value: "Apras", label: "Apras (6-18 thn)" },
+  { value: "Produktif", label: "Produktif & Dewasa (19-59 thn)" },
   { value: "Lansia", label: "Lansia (60+ thn)" },
 ];
 
 const kategoriColors = {
-  Bayi: "bg-primary-100 text-primary-700",
-  Batita: "bg-blue-100 text-blue-700",
-  Anak: "bg-amber-100 text-amber-700",
-  Remaja: "bg-purple-100 text-purple-700",
-  Dewasa: "bg-green-100 text-green-700",
-  Pralansia: "bg-orange-100 text-orange-700",
+  Balita: "bg-primary-100 text-primary-700",
+  Apras: "bg-purple-100 text-purple-700",
+  Produktif: "bg-green-100 text-green-700",
   Lansia: "bg-red-100 text-red-700",
   Lainnya: "bg-gray-100 text-gray-600",
 };

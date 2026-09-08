@@ -1,16 +1,23 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, Navigate } from "react-router-dom";
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+} from "recharts";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 import { formatTanggal, hitungUmur, getKategoriUmur } from "../utils/helpers";
 
 const kategoriColors = {
-  Bayi: "bg-primary-100 text-primary-700",
-  Batita: "bg-blue-100 text-blue-700",
-  Anak: "bg-amber-100 text-amber-700",
-  Remaja: "bg-purple-100 text-purple-700",
-  Dewasa: "bg-green-100 text-green-700",
-  Pralansia: "bg-orange-100 text-orange-700",
+  Balita: "bg-primary-100 text-primary-700",
+  Apras: "bg-purple-100 text-purple-700",
+  Produktif: "bg-green-100 text-green-700",
   Lansia: "bg-red-100 text-red-700",
   Lainnya: "bg-gray-100 text-gray-600",
 };
@@ -58,6 +65,35 @@ function ParentPesertaDetail() {
 
   const { peserta, measurements, immunizations } = data;
   const kategori = getKategoriUmur(peserta.tanggalLahir);
+
+  const formatUmur = (bln) => {
+    if (bln == null) return "";
+    const tahun = Math.floor(bln / 12);
+    const sisa = bln % 12;
+    if (tahun > 0 && sisa > 0) return `${tahun} th ${sisa} bl`;
+    if (tahun > 0) return `${tahun} th`;
+    return `${bln} bl`;
+  };
+
+  const chartData = [...measurements]
+    .sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal))
+    .map((m) => {
+      const lahir = new Date(peserta.tanggalLahir);
+      const tgl = new Date(m.tanggal);
+      const umurBln = Math.max(
+        0,
+        (tgl.getFullYear() - lahir.getFullYear()) * 12 +
+          (tgl.getMonth() - lahir.getMonth())
+      );
+      const label = tgl.toLocaleString("id-ID", { month: "short" });
+      return {
+        label,
+        umur: formatUmur(umurBln),
+        umurBln,
+        "Berat (kg)": m.beratBadan,
+        "Tinggi (cm)": m.tinggiBadan ?? null,
+      };
+    });
 
   const info = [
     { label: "Jenis Kelamin", value: peserta.jenisKelamin === "L" ? "Laki-laki" : "Perempuan" },
@@ -109,6 +145,87 @@ function ParentPesertaDetail() {
             </div>
           ))}
         </div>
+      </div>
+
+      <div className="bg-white rounded-2xl shadow-sm p-6">
+        <h2 className="font-semibold text-gray-800 mb-4">
+          Grafik Pertumbuhan (Berat Badan & Tinggi Badan)
+        </h2>
+        <p className="text-sm text-gray-500 mb-4">
+          Sumbu X menampilkan bulan penimbangan (Januari–Desember) beserta umur
+          anak pada saat itu.
+        </p>
+        {chartData.length === 0 ? (
+          <div className="border-2 border-dashed border-gray-200 rounded-xl h-72 flex flex-col items-center justify-center text-gray-400">
+            <div className="text-4xl mb-3">📈</div>
+            <p className="font-medium">Belum ada data penimbangan</p>
+            <p className="text-sm mt-1">
+              Grafik akan tampil setelah ada riwayat penimbangan
+            </p>
+          </div>
+        ) : (
+          <>
+            <ResponsiveContainer width="100%" height={320}>
+              <LineChart
+                data={chartData}
+                margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fontSize: 12 }}
+                  interval={0}
+                  tickFormatter={(label, index) => {
+                    const d = chartData[index];
+                    return d && d.umur ? `${label}\n(${d.umur})` : label;
+                  }}
+                />
+                <YAxis tick={{ fontSize: 12 }} />
+                <Tooltip
+                  formatter={(value, name) =>
+                    name === "Berat (kg)" ? [`${value} kg`, name] : [`${value} cm`, name]
+                  }
+                  labelFormatter={(label) => `Bulan ${label}`}
+                />
+                <Legend />
+                <Line
+                  type="monotone"
+                  dataKey="Berat (kg)"
+                  stroke="#16a34a"
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                  connectNulls
+                />
+                <Line
+                  type="monotone"
+                  dataKey="Tinggi (cm)"
+                  stroke="#2563eb"
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                  connectNulls
+                />
+              </LineChart>
+            </ResponsiveContainer>
+            <div className="mt-1 px-6 flex justify-between text-[11px] text-gray-400">
+              {chartData.map((d, i) => (
+                <span key={i}>{d.label}</span>
+              ))}
+            </div>
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-6 text-sm">
+              <span className="inline-flex items-center gap-2 text-gray-700">
+                <span className="w-3 h-3 rounded-full bg-green-600"></span>
+                Berat Badan (kg)
+              </span>
+              <span className="inline-flex items-center gap-2 text-gray-700">
+                <span className="w-3 h-3 rounded-full bg-blue-600"></span>
+                Tinggi Badan (cm)
+              </span>
+              <span className="text-xs text-gray-400">
+                Bulan (Jan–Des) · Umur anak saat penimbangan
+              </span>
+            </div>
+          </>
+        )}
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm p-6">

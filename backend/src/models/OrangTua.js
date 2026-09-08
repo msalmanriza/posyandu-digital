@@ -28,6 +28,9 @@ const orangTuaSchema = new mongoose.Schema(
       min: [15, "Umur tidak valid"],
       max: [100, "Umur tidak valid"],
     },
+    tanggalLahir: {
+      type: Date,
+    },
     statusKb: {
       type: String,
       enum: ["Ya", "Tidak"],

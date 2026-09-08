@@ -14,10 +14,51 @@ const buildYearTrend = async () => {
     const agg = await Measurement.aggregate([
       { $match: { tanggal: { $gte: start, $lt: end } } },
       {
+        $lookup: {
+          from: "pesertas",
+          localField: "peserta",
+          foreignField: "_id",
+          as: "p",
+        },
+      },
+      { $unwind: { path: "$p", preserveNullAndEmptyArrays: true } },
+      {
+        $project: {
+          beratBadan: 1,
+          tinggiBadan: 1,
+          umurBln: {
+            $cond: {
+              if: { $and: ["$p.tanggalLahir", "$tanggal"] },
+              then: {
+                $max: [
+                  0,
+                  {
+                    $floor: {
+                      $divide: [
+                        {
+                          $dateDiff: {
+                            startDate: "$p.tanggalLahir",
+                            endDate: "$tanggal",
+                            unit: "day",
+                          },
+                        },
+                        30.44,
+                      ],
+                    },
+                  },
+                ],
+              },
+              else: null,
+            },
+          },
+        },
+      },
+      {
         $group: {
           _id: null,
           berat: { $avg: "$beratBadan" },
           tinggi: { $avg: "$tinggiBadan" },
+          umur: { $avg: "$umurBln" },
         },
       },
     ]);
@@ -27,6 +68,7 @@ const buildYearTrend = async () => {
       label: start.toLocaleString("id-ID", { month: "short" }),
       rataBerat: agg.length ? Math.round(agg[0].berat * 100) / 100 : 0,
       rataTinggi: agg.length ? Math.round((agg[0].tinggi || 0) * 100) / 100 : 0,
+      rataUmurBln: agg.length ? Math.round(agg[0].umur || 0) : 0,
     });
   }
   return trend;

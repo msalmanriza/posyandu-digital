@@ -2,6 +2,16 @@ import { useState } from "react";
 import { Link, useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import PasswordInput from "../components/PasswordInput";
+import pengurus1 from "../assets/pengurus/pengurus1.jpeg";
+import pengurus2 from "../assets/pengurus/pengurus2.png";
+import pengurus3 from "../assets/pengurus/pengurus3.png";
+import pengurus4 from "../assets/pengurus/pengurus4.png";
+import pengurus5 from "../assets/pengurus/pengurus5.png";
+import pengurus6 from "../assets/pengurus/pengurus6.png";
+import pengurus7 from "../assets/pengurus/pengurus7.png";
+import pengurus8 from "../assets/pengurus/pengurus8.png";
+import pengurus9 from "../assets/pengurus/pengurus9.png";
+import pengurus10 from "../assets/pengurus/pengurus10.png";
 
 const bannerUrl =
   "https://images.unsplash.com/photo-1516627145497-ae6968895b74?auto=format&fit=crop&w=1200&q=80";
@@ -31,19 +41,54 @@ const layanan = [
 
 const pengurus = [
   {
-    nama: "Ibu Herawati",
+    nama: "Eny Cahyawati",
     jabatan: "Ketua Posyandu",
-    foto: "https://i.pravatar.cc/150?img=45",
+    foto: pengurus4,
   },
   {
-    nama: "Ibu Siti",
-    jabatan: "Kader Penimbangan",
-    foto: "https://i.pravatar.cc/150?img=47",
+    nama: "Hafnidah",
+    jabatan: "Wakil Ketua",
+    foto: pengurus6,
   },
   {
-    nama: "Ibu Rahma",
-    jabatan: "Kader Imunisasi / Pencatatan",
-    foto: "https://i.pravatar.cc/150?img=44",
+    nama: "Shasty Pramahesty",
+    jabatan: "Sekretaris",
+    foto: pengurus9,
+  },
+  {
+    nama: "Noor Umi Rochmah",
+    jabatan: "Bendahara",
+    foto: pengurus5,
+  },
+  {
+    nama: "Upi Hermawati",
+    jabatan: "Kader Kesehatan Ibu & Anak",
+    foto: pengurus1,
+  },
+  {
+    nama: "Ningkrum Trisanti",
+    jabatan: "Kader Imunisasi",
+    foto: pengurus2,
+  },
+  {
+    nama: "Eny Cahyawati",
+    jabatan: "Kader Pencegahan Penyakit",
+    foto: pengurus4,
+  },
+  {
+    nama: "Sarijati",
+    jabatan: "Kader Keluarga Berencana",
+    foto: pengurus8,
+  },
+  {
+    nama: "Noor Farida",
+    jabatan: "Kader Gizi",
+    foto: pengurus3,
+  },
+  {
+    nama: "Ibu Rina",
+    jabatan: "Kader Kesehatan",
+    foto: pengurus10,
   },
 ];
 
@@ -141,7 +186,7 @@ function Login() {
             <h2 className="text-xl font-bold text-gray-800 mb-4">
               Struktur Organisasi & Pengurus Posyandu
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {pengurus.map((p) => (
                 <div
                   key={p.nama}
@@ -153,7 +198,7 @@ function Login() {
                     onError={(e) => {
                       e.currentTarget.style.display = "none";
                     }}
-                    className="w-20 h-20 rounded-full object-cover mx-auto bg-gray-100"
+                    className="w-24 h-28 rounded-2xl object-cover object-top mx-auto bg-gray-100"
                   />
                   <p className="font-semibold text-gray-800 mt-3">{p.nama}</p>
                   <p className="text-sm text-gray-500 mt-0.5">{p.jabatan}</p>
@@ -172,10 +217,10 @@ function Login() {
                   Jadwal Posyandu
                 </p>
                 <p className="font-medium text-gray-800 mt-2">
-                  Setiap tanggal 10 tiap bulan
+                  Setiap Minggu ke 3 Akhir bulan
                 </p>
                 <p className="text-sm text-gray-500 mt-1">
-                  08.00 - 12.00 WIB di Balai Desa
+                  08.00 - 11.00 WIB di Posyandu Manyar 21
                 </p>
               </div>
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
@@ -183,7 +228,7 @@ function Login() {
                   Alamat & Kontak
                 </p>
                 <p className="font-medium text-gray-800 mt-2">
-                  Jl. Melati No. 5, Desa Posyandu
+                  Jl.Manyar Utama 1 
                 </p>
                 <p className="text-sm text-gray-500 mt-1">
                   📞 0812-3456-7890 · posyandudigital@mail.com
@@ -193,7 +238,7 @@ function Login() {
           </section>
 
           <footer className="text-xs text-gray-400">
-            &copy; 2026 Posyandu Digital. Dibuat dengan ❤️ untuk kesehatan balita.
+            &copy; 2026 Posyandu Digital.
           </footer>
         </div>
       </div>
