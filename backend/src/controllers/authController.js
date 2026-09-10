@@ -1,7 +1,6 @@
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import OrangTua from "../models/OrangTua.js";
-import Peserta from "../models/Peserta.js";
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -50,19 +49,14 @@ export const registerParent = async (req, res) => {
       password,
       telepon,
       alamat,
-      umur,
+      tanggalLahir,
       statusKb,
-      jumlahAnak,
       statusHamil,
       statusBPJS,
-      anak = null,
     } = req.body;
 
     if (!nama || !email || !password) {
       return res.status(400).json({ message: "Nama, email, dan password wajib diisi" });
-    }
-    if (umur == null || umur === "" || jumlahAnak == null || jumlahAnak === "") {
-      return res.status(400).json({ message: "Umur dan jumlah anak wajib diisi" });
     }
 
     const userExists = await User.findOne({ email });
@@ -72,31 +66,28 @@ export const registerParent = async (req, res) => {
 
     const nik = `900${String(Date.now())}`;
 
+    const umur = tanggalLahir
+      ? Math.max(
+          0,
+          Math.floor(
+            (Date.now() - new Date(tanggalLahir).getTime()) /
+              (365.25 * 24 * 60 * 60 * 1000)
+          )
+        )
+      : undefined;
+
     const orangTua = await OrangTua.create({
       nama,
       nik,
       jenisKelamin: "P",
-      umur: Number(umur),
+      umur,
+      tanggalLahir: tanggalLahir || undefined,
       statusKb: statusKb || "Tidak",
-      jumlahAnak: Number(jumlahAnak),
       statusHamil: statusHamil || "Tidak",
       statusBPJS: statusBPJS || "Tidak",
       telepon: telepon || "",
       alamat: alamat || "",
     });
-
-    if (anak?.nama && anak?.tanggalLahir && anak?.jenisKelamin) {
-      await Peserta.create({
-        nama: anak.nama,
-        nik: anak.nik || "",
-        jenisKelamin: anak.jenisKelamin,
-        tanggalLahir: anak.tanggalLahir,
-        orangTua: orangTua._id,
-        namaOrangTua: nama,
-        alamat: alamat || "",
-        statusBPJSAnak: anak.statusBPJSAnak || "Tidak",
-      });
-    }
 
     const user = await User.create({
       nama,

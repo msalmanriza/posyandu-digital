@@ -254,6 +254,16 @@ function ServiceModule({ apiPath, title, description, fields, columns, initialFo
                       </option>
                     ))}
                   </select>
+                ) : f.type === "textarea" ? (
+                  <textarea
+                    name={f.name}
+                    value={form[f.name]}
+                    onChange={handleChange}
+                    required={f.required}
+                    rows={3}
+                    className={`${inputClass} resize-none`}
+                    placeholder={f.placeholder}
+                  />
                 ) : (
                   <input
                     type={f.type || "text"}

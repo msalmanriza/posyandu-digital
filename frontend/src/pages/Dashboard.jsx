@@ -3,8 +3,9 @@ import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 import KirimWhatsApp from "../components/KirimWhatsApp";
+import NotifBell from "../components/NotifBell";
 
-const TrendChart = lazy(() => import("../components/TrendChart"));
+const KunjunganChart = lazy(() => import("../components/KunjunganChart"));
 
 const quickActions = [
   { to: "/penimbangan?input=1", icon: "⚖️", label: "Input Penimbangan", desc: "Catat berat & tinggi" },
@@ -21,7 +22,7 @@ function Dashboard() {
     imunisasiBulanIni: 0,
     kehadiranBulanIni: 0,
   });
-  const [trend, setTrend] = useState([]);
+  const [kunjungan, setKunjungan] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -41,9 +42,9 @@ function Dashboard() {
 
   useEffect(() => {
     api
-      .get("/dashboard/trend-berat")
-      .then(({ data }) => setTrend(data))
-      .catch(() => setTrend([]));
+      .get("/dashboard/trend-kunjungan")
+      .then(({ data }) => setKunjungan(data))
+      .catch(() => setKunjungan([]));
   }, []);
 
   const statCards = [
@@ -69,9 +70,12 @@ function Dashboard() {
           </h1>
           <p className="text-gray-500 mt-1">Pantau aktivitas Posyandu Anda hari ini.</p>
         </div>
-        <span className="inline-flex self-start px-3 py-1 text-xs font-semibold bg-primary-100 text-primary-700 rounded-full">
-          Dashboard Kader
-        </span>
+        <div className="flex items-center gap-3 self-end">
+          <NotifBell />
+          <span className="inline-flex px-3 py-1 text-xs font-semibold bg-primary-100 text-primary-700 rounded-full">
+            Dashboard Kader
+          </span>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -118,10 +122,10 @@ function Dashboard() {
 
       <div>
         <h2 className="text-lg font-semibold text-gray-800 mb-1">
-          Tren Rata-rata Berat & Tinggi Badan Balita
+          Statistik Kunjungan &amp; Penimbangan Balita Bulanan
         </h2>
         <p className="text-sm text-gray-500 mb-3">
-          Rata-rata per bulan selama 12 bulan di tahun berjalan
+          Rekap total balita ditimbang dan partisipasi kehadiran per bulan di tahun berjalan
         </p>
         <div className="bg-white rounded-2xl shadow-sm p-6">
           <Suspense
@@ -131,7 +135,7 @@ function Dashboard() {
               </div>
             }
           >
-            <TrendChart data={trend} />
+            <KunjunganChart data={kunjungan} />
           </Suspense>
         </div>
       </div>

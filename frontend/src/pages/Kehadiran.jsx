@@ -17,6 +17,7 @@ const fields = [
     required: true,
     options: ["Hadir", "Tidak Hadir", "Sakit", "Izin"],
   },
+  { name: "catatan", label: "Catatan", type: "textarea", placeholder: "Tulis catatan jika ada..." },
 ];
 
 const columns = [
@@ -34,12 +35,14 @@ const columns = [
       </span>
     ),
   },
+  { key: "catatan", label: "Catatan", render: (r) => r.catatan || "-" },
 ];
 
 const initialForm = {
   peserta: "",
   tanggal: todayString(),
   statusKehadiran: "Hadir",
+  catatan: "",
 };
 
 function Kehadiran() {

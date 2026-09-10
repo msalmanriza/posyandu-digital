@@ -15,6 +15,7 @@ import scheduleRoutes from "./routes/scheduleRoutes.js";
 import announcementRoutes from "./routes/announcementRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
 import parentRoutes from "./routes/parentRoutes.js";
+import devRoutes from "./routes/devRoutes.js";
 
 dotenv.config();
 
@@ -39,6 +40,10 @@ app.use("/api/schedules", scheduleRoutes);
 app.use("/api/announcements", announcementRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/parent", parentRoutes);
+
+if (process.env.NODE_ENV !== "production") {
+  app.use("/api/dev", devRoutes);
+}
 
 app.get("/", (req, res) => {
   res.json({

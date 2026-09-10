@@ -17,6 +17,10 @@ const measurementSchema = new mongoose.Schema(
       required: [true, "Berat badan wajib diisi"],
       min: [0, "Berat badan tidak valid"],
     },
+    statusGizi: {
+      type: String,
+      enum: ["bgm", "kuningBawah", "hijauMuda", "hijauTua", "kuningAtas", "merahAtas"],
+    },
     tinggiBadan: {
       type: Number,
       min: [0, "Tinggi badan tidak valid"],

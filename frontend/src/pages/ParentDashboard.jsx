@@ -21,6 +21,16 @@ const emojiAnak = (tanggalLahir) => {
   return bulan < 24 ? "👶" : "🧒";
 };
 
+const formatHariTanggal = (value) => {
+  if (!value) return "";
+  return new Date(value).toLocaleDateString("id-ID", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+};
+
 function ParentDashboard() {
   const { user } = useAuth();
   const [data, setData] = useState({
@@ -104,10 +114,16 @@ function ParentDashboard() {
             Pantau tumbuh kembang dan jadwal kesehatan anak Anda.
           </p>
         </div>
-        <span className="inline-flex self-start px-3 py-1 text-xs font-semibold bg-primary-100 text-primary-700 rounded-full">
+        <span className="inline-flex self-end px-3 py-1 text-xs font-semibold bg-primary-100 text-primary-700 rounded-full">
           Portal Orang Tua
         </span>
       </div>
+
+      {nextSchedule && (
+        <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-sm text-green-800">
+          🔔 Posyandu Berikutnya: {formatHariTanggal(nextSchedule.tanggal)}
+        </div>
+      )}
 
       <div className="bg-white rounded-2xl shadow-sm p-5 flex items-center gap-4">
         <div className="w-12 h-12 rounded-xl bg-primary-100 text-primary-700 flex items-center justify-center text-2xl">

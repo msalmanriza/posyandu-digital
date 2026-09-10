@@ -2,16 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import api from "../services/api";
 import { formatTanggal, hitungUmur, getKategoriUmur } from "../utils/helpers";
-import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-} from "recharts";
+import KmsChart from "../components/KmsChart";
 
 const kategoriColors = {
   Balita: "bg-primary-100 text-primary-700",
@@ -89,14 +80,6 @@ function PesertaDetail() {
   const lastVit = vitamins[0] || null;
   const lastAtt = attendance[0] || null;
 
-  const chartData = [...measurements]
-    .sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal))
-    .map((m) => ({
-      tanggal: formatTanggal(m.tanggal),
-      "Berat (kg)": m.beratBadan,
-      "Tinggi (cm)": m.tinggiBadan ?? null,
-    }));
-
   const statCards = [
     { label: "Nama Peserta", value: peserta.nama },
     { label: "Usia", value: hitungUmur(peserta.tanggalLahir) },
@@ -164,49 +147,12 @@ function PesertaDetail() {
         ))}
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm p-6">
-        <h2 className="font-semibold text-gray-800 mb-4">
-          Grafik Pertumbuhan (Berat Badan & Tinggi Badan)
-        </h2>
-        {chartData.length === 0 ? (
-          <div className="border-2 border-dashed border-gray-200 rounded-xl h-72 flex flex-col items-center justify-center text-gray-400">
-            <div className="text-4xl mb-3">📈</div>
-            <p className="font-medium">Belum ada data penimbangan</p>
-            <p className="text-sm mt-1">
-              Grafik akan tampil setelah ada riwayat penimbangan
-            </p>
-          </div>
-        ) : (
-          <ResponsiveContainer width="100%" height={320}>
-            <LineChart
-              data={chartData}
-              margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="tanggal" tick={{ fontSize: 12 }} />
-              <YAxis tick={{ fontSize: 12 }} />
-              <Tooltip />
-              <Legend />
-              <Line
-                type="monotone"
-                dataKey="Berat (kg)"
-                stroke="#16a34a"
-                strokeWidth={2}
-                dot={{ r: 3 }}
-                connectNulls
-              />
-              <Line
-                type="monotone"
-                dataKey="Tinggi (cm)"
-                stroke="#2563eb"
-                strokeWidth={2}
-                dot={{ r: 3 }}
-                connectNulls
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        )}
-      </div>
+      <KmsChart
+        data={measurements}
+        birthDate={peserta.tanggalLahir}
+        sex={peserta.jenisKelamin}
+        title="Grafik Pertumbuhan (Berat Badan / Umur)"
+      />
 
       <div className="bg-white rounded-2xl shadow-sm p-6">
         <h2 className="font-semibold text-gray-800 mb-4">Riwayat Terakhir</h2>

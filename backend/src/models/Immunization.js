@@ -21,6 +21,11 @@ const immunizationSchema = new mongoose.Schema(
       type: Number,
       min: [0, "Usia bulan tidak valid"],
     },
+    catatan: {
+      type: String,
+      trim: true,
+      default: "",
+    },
   },
   {
     timestamps: true,

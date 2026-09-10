@@ -3,6 +3,7 @@ import Immunization from "../models/Immunization.js";
 import Vitamin from "../models/Vitamin.js";
 import Peserta from "../models/Peserta.js";
 import logActivity from "../utils/logActivity.js";
+import { getKmsZone } from "../utils/kmsReference.js";
 
 const populateOpt = { path: "peserta", select: "nama jenisKelamin" };
 
@@ -10,6 +11,7 @@ const recordLog = async (req, aksi, target) => {
   return logActivity({
     userId: req.user?._id,
     namaUser: req.user?.nama,
+    emailUser: req.user?.email,
     role: req.user?.role,
     modul: "Penimbangan",
     aksi,
@@ -17,14 +19,25 @@ const recordLog = async (req, aksi, target) => {
   });
 };
 
-const hitungUsiaBulan = (tanggalLahir) => {
+const hitungUsiaBulan = (tanggalLahir, atDate) => {
   if (!tanggalLahir) return undefined;
   const lahir = new Date(tanggalLahir);
-  const now = new Date();
+  const now = atDate ? new Date(atDate) : new Date();
   const bulan =
     (now.getFullYear() - lahir.getFullYear()) * 12 +
     (now.getMonth() - lahir.getMonth());
   return bulan >= 0 ? bulan : undefined;
+};
+
+const hitungStatusGizi = async (pesertaId, beratBadan, tanggal) => {
+  if (!pesertaId || beratBadan == null) return undefined;
+  const peserta = await Peserta.findById(pesertaId).select(
+    "tanggalLahir jenisKelamin"
+  );
+  if (!peserta) return undefined;
+  const usia = hitungUsiaBulan(peserta.tanggalLahir, tanggal);
+  const zone = getKmsZone(Number(beratBadan), usia, peserta.jenisKelamin);
+  return zone?.key;
 };
 
 const getUsiaBulan = async (pesertaId) => {
@@ -44,7 +57,12 @@ const catatVitamin = async (pesertaId, tanggal, jenisVitamin) => {
 export const createMeasurement = async (req, res) => {
   try {
     const { imunisasi, vitamin } = req.body;
-    const measurement = await Measurement.create(req.body);
+    const statusGizi = await hitungStatusGizi(
+      req.body.peserta,
+      req.body.beratBadan,
+      req.body.tanggal
+    );
+    const measurement = await Measurement.create({ ...req.body, statusGizi });
 
     if (imunisasi) {
       const record = await catatImunisasi(
@@ -118,11 +136,18 @@ export const updateMeasurement = async (req, res) => {
       existing.vitaminRecord = undefined;
     }
 
+    const statusGizi = await hitungStatusGizi(
+      newPeserta,
+      rest.beratBadan ?? existing.beratBadan,
+      newTanggal
+    );
+
     Object.assign(existing, rest, {
       tanggal: newTanggal,
       peserta: newPeserta,
       imunisasi,
       vitamin,
+      statusGizi,
     });
     await existing.save();
 

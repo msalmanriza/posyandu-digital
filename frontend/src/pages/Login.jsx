@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import PasswordInput from "../components/PasswordInput";
@@ -12,84 +12,54 @@ import pengurus7 from "../assets/pengurus/pengurus7.png";
 import pengurus8 from "../assets/pengurus/pengurus8.png";
 import pengurus9 from "../assets/pengurus/pengurus9.png";
 import pengurus10 from "../assets/pengurus/pengurus10.png";
+import landing1 from "../assets/landing-page/landing-page 1.jpg";
+import landing2 from "../assets/landing-page/landing-page 2.jpg";
+import landing3 from "../assets/landing-page/landing-page 3.jpg";
+import landing4 from "../assets/landing-page/landing-page 4.jpg";
 
-const bannerUrl =
-  "https://images.unsplash.com/photo-1516627145497-ae6968895b74?auto=format&fit=crop&w=1200&q=80";
+const heroSlides = [
+  { src: landing1, alt: "Kegiatan Posyandu - Pemeriksaan Balita" },
+  { src: landing2, alt: "Kegiatan Posyandu - Pelayanan Kesehatan" },
+  { src: landing3, alt: "Kegiatan Posyandu - Pemeriksaan Anak & Lansia" },
+  { src: landing4, alt: "Kegiatan Posyandu - Kader Posyandu" },
+];
 
 const layanan = [
   {
-    icon: "⚖️",
-    judul: "Penimbangan",
-    desc: "Catat berat & tinggi badan balita secara berkala dan akurat.",
+    icon: "👶",
+    judul: "Pemeriksaan Bayi, Balita & Apras",
+    desc: "Pemantauan rutin tumbuh kembang, penimbangan berat badan, pengukuran tinggi badan, stimulasi edukasi, serta pemberian imunisasi dan vitamin.",
   },
   {
-    icon: "💉",
-    judul: "Imunisasi",
-    desc: "Rekam riwayat vaksinasi sesuai jadwal imunisasi nasional.",
+    icon: "🧒",
+    judul: "Pemeriksaan Anak Usia Sekolah & Remaja",
+    desc: "Skrining kesehatan berkala, pemantauan status gizi, edukasi gaya hidup sehat, serta pencegahan anemia pada usia remaja.",
   },
   {
-    icon: "💊",
-    judul: "Vitamin",
-    desc: "Kelola pemberian vitamin rutin untuk tumbuh kembang anak.",
+    icon: "🧑",
+    judul: "Pemeriksaan Dewasa & Usia Produktif",
+    desc: "Deteksi dini faktor risiko penyakit tidak menular (PTM) seperti cek tekanan darah, gula darah, serta edukasi kesehatan keluarga.",
   },
   {
-    icon: "📈",
-    judul: "Monitoring Tumbuh Kembang",
-    desc: "Pantau grafik pertumbuhan tiap anak dalam satu aplikasi.",
+    icon: "🧓",
+    judul: "Pemeriksaan Lansia",
+    desc: "Skrining kesehatan usia lanjut, pemantauan kondisi fisik dan kognitif, serta pendampingan pola hidup sehat untuk lansia mandiri.",
   },
 ];
 
 const pengurus = [
-  {
-    nama: "Eny Cahyawati",
-    jabatan: "Ketua Posyandu",
-    foto: pengurus4,
-  },
-  {
-    nama: "Hafnidah",
-    jabatan: "Wakil Ketua",
-    foto: pengurus6,
-  },
-  {
-    nama: "Shasty Pramahesty",
-    jabatan: "Sekretaris",
-    foto: pengurus9,
-  },
-  {
-    nama: "Noor Umi Rochmah",
-    jabatan: "Bendahara",
-    foto: pengurus5,
-  },
-  {
-    nama: "Upi Hermawati",
-    jabatan: "Kader Kesehatan Ibu & Anak",
-    foto: pengurus1,
-  },
-  {
-    nama: "Ningkrum Trisanti",
-    jabatan: "Kader Imunisasi",
-    foto: pengurus2,
-  },
-  {
-    nama: "Eny Cahyawati",
-    jabatan: "Kader Pencegahan Penyakit",
-    foto: pengurus4,
-  },
-  {
-    nama: "Sarijati",
-    jabatan: "Kader Keluarga Berencana",
-    foto: pengurus8,
-  },
-  {
-    nama: "Noor Farida",
-    jabatan: "Kader Gizi",
-    foto: pengurus3,
-  },
-  {
-    nama: "Ibu Rina",
-    jabatan: "Kader Kesehatan",
-    foto: pengurus10,
-  },
+  { nama: "Eny Cahyawati", jabatan: "Ketua Posyandu", foto: pengurus4 },
+  { nama: "Hafnidah", jabatan: "Wakil Ketua", foto: pengurus6 },
+  { nama: "Shasty Pramahesty", jabatan: "Sekretaris", foto: pengurus9 },
+  { nama: "Noor Umi Rochmah", jabatan: "Bendahara", foto: pengurus10 },
+  { nama: "Upi Hermawati", jabatan: "Kader Kesehatan Ibu & Anak", foto: pengurus1 },
+  { nama: "Ningrum Trisanti", jabatan: "Kader Imunisasi", foto: pengurus7 },
+  { nama: "Sarjiati", jabatan: "Kader Keluarga Berencana", foto: pengurus8 },
+  null,
+  { nama: "Noor Farida", jabatan: "Kader Gizi", foto: pengurus5 },
+  { nama: "Pengurus 2", jabatan: "Jabatan/Role Baru 1", foto: pengurus2 },
+  null,
+  { nama: "Pengurus 3", jabatan: "Jabatan/Role Baru 2", foto: pengurus3 },
 ];
 
 function Login() {
@@ -98,6 +68,15 @@ function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [slide, setSlide] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(
+      () => setSlide((s) => (s + 1) % heroSlides.length),
+      4000
+    );
+    return () => clearInterval(timer);
+  }, []);
 
   if (user) {
     return (
@@ -142,22 +121,49 @@ function Login() {
     <div className="flex min-h-screen bg-gray-50">
       <div className="hidden lg:block lg:w-[55%] xl:w-[58%] h-screen overflow-y-auto bg-white">
         <div className="relative">
-          <img
-            src={bannerUrl}
-            alt="Ibu dan balita"
-            onError={(e) => {
-              e.currentTarget.style.display = "none";
-            }}
-            className="w-full h-80 object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-primary-700/90 via-primary-600/30 to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 p-8 lg:p-12">
-            <h1 className="text-3xl xl:text-4xl font-bold text-white">
-              Posyandu Digital
-            </h1>
-            <p className="text-white/90 mt-2 max-w-md">
-              Pencatatan kesehatan balita modern, akurat, dan terintegrasi.
-            </p>
+          <div className="relative h-[300px] xl:h-[340px] overflow-hidden">
+            {heroSlides.map((s, i) => (
+              <img
+                key={s.src}
+                src={s.src}
+                alt={s.alt}
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                }}
+                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-in-out ${
+                  i === slide ? "opacity-100" : "opacity-0"
+                }`}
+              />
+            ))}
+            <div className="absolute inset-0 bg-black/40" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+            <div className="absolute inset-0 flex items-end pb-16 px-8 lg:px-12">
+              <div className="max-w-md">
+                <h1 className="text-3xl xl:text-4xl font-bold text-white">
+                  ILPKartini21
+                </h1>
+                <p className="text-white/95 mt-2">
+                  Sistem informasi kesehatan terpadu Posyandu Kartini 21 untuk
+                  pemantauan tumbuh kembang dan pelayanan kesehatan seluruh
+                  siklus hidup keluarga secara akurat, modern, dan terintegrasi.
+                </p>
+              </div>
+            </div>
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2">
+              {heroSlides.map((s, i) => (
+                <button
+                  key={s.src}
+                  type="button"
+                  onClick={() => setSlide(i)}
+                  aria-label={`Slide ${i + 1}`}
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    i === slide
+                      ? "w-6 bg-white"
+                      : "w-2 bg-white/50 hover:bg-white/80"
+                  }`}
+                />
+              ))}
+            </div>
           </div>
         </div>
 
@@ -186,24 +192,28 @@ function Login() {
             <h2 className="text-xl font-bold text-gray-800 mb-4">
               Struktur Organisasi & Pengurus Posyandu
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {pengurus.map((p) => (
-                <div
-                  key={p.nama}
-                  className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 text-center"
-                >
-                  <img
-                    src={p.foto}
-                    alt={p.nama}
-                    onError={(e) => {
-                      e.currentTarget.style.display = "none";
-                    }}
-                    className="w-24 h-28 rounded-2xl object-cover object-top mx-auto bg-gray-100"
-                  />
-                  <p className="font-semibold text-gray-800 mt-3">{p.nama}</p>
-                  <p className="text-sm text-gray-500 mt-0.5">{p.jabatan}</p>
-                </div>
-              ))}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {pengurus.map((p, i) =>
+                p ? (
+                  <div
+                    key={i}
+                    className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 text-center"
+                  >
+                    <img
+                      src={p.foto}
+                      alt={p.nama}
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                      }}
+                      className="w-24 h-28 rounded-2xl object-cover object-top mx-auto bg-gray-100"
+                    />
+                    <p className="font-semibold text-gray-800 mt-3">{p.nama}</p>
+                    <p className="text-sm text-gray-500 mt-0.5">{p.jabatan}</p>
+                  </div>
+                ) : (
+                  <div key={i} className="hidden md:block"></div>
+                )
+              )}
             </div>
           </section>
 
@@ -217,10 +227,10 @@ function Login() {
                   Jadwal Posyandu
                 </p>
                 <p className="font-medium text-gray-800 mt-2">
-                  Setiap Minggu ke 3 Akhir bulan
+                  Setiap Hari Rabu Minggu ke 3
                 </p>
                 <p className="text-sm text-gray-500 mt-1">
-                  08.00 - 11.00 WIB di Posyandu Manyar 21
+                  09.00 - 12.00 WIB di Kartini 21
                 </p>
               </div>
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
@@ -231,14 +241,14 @@ function Login() {
                   Jl.Manyar Utama 1 
                 </p>
                 <p className="text-sm text-gray-500 mt-1">
-                  📞 0812-3456-7890 · posyandudigital@mail.com
+                  📞 0812-3456-7890 · kartini21@gmail.com
                 </p>
               </div>
             </div>
           </section>
 
           <footer className="text-xs text-gray-400">
-            &copy; 2026 Posyandu Digital.
+            &copy; 2026 ILPKartini21.
           </footer>
         </div>
       </div>

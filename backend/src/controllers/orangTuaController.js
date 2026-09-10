@@ -5,6 +5,7 @@ const recordLog = async (req, aksi, target) => {
   return logActivity({
     userId: req.user?._id,
     namaUser: req.user?.nama,
+    emailUser: req.user?.email,
     role: req.user?.role,
     modul: "Orang Tua",
     aksi,

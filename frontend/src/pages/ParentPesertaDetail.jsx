@@ -1,18 +1,10 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, Navigate } from "react-router-dom";
-import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-} from "recharts";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 import { formatTanggal, hitungUmur, getKategoriUmur } from "../utils/helpers";
+import { getKmsZone } from "../utils/kmsReference";
+import KmsChart from "../components/KmsChart";
 
 const kategoriColors = {
   Balita: "bg-primary-100 text-primary-700",
@@ -66,34 +58,58 @@ function ParentPesertaDetail() {
   const { peserta, measurements, immunizations } = data;
   const kategori = getKategoriUmur(peserta.tanggalLahir);
 
-  const formatUmur = (bln) => {
-    if (bln == null) return "";
-    const tahun = Math.floor(bln / 12);
-    const sisa = bln % 12;
-    if (tahun > 0 && sisa > 0) return `${tahun} th ${sisa} bl`;
-    if (tahun > 0) return `${tahun} th`;
-    return `${bln} bl`;
+  const umurBulanPada = (tanggal) => {
+    if (!peserta.tanggalLahir || !tanggal) return null;
+    const lahir = new Date(peserta.tanggalLahir);
+    const tgl = new Date(tanggal);
+    return Math.max(
+      0,
+      (tgl.getFullYear() - lahir.getFullYear()) * 12 +
+        (tgl.getMonth() - lahir.getMonth())
+    );
   };
 
-  const chartData = [...measurements]
-    .sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal))
-    .map((m) => {
-      const lahir = new Date(peserta.tanggalLahir);
-      const tgl = new Date(m.tanggal);
-      const umurBln = Math.max(
-        0,
-        (tgl.getFullYear() - lahir.getFullYear()) * 12 +
-          (tgl.getMonth() - lahir.getMonth())
-      );
-      const label = tgl.toLocaleString("id-ID", { month: "short" });
-      return {
-        label,
-        umur: formatUmur(umurBln),
-        umurBln,
-        "Berat (kg)": m.beratBadan,
-        "Tinggi (cm)": m.tinggiBadan ?? null,
-      };
-    });
+  const latest = measurements[0] || null;
+  const prev = measurements[1] || null;
+  const latestUmur = latest ? umurBulanPada(latest.tanggal) : null;
+  const zone = latest
+    ? getKmsZone(latest.beratBadan, latestUmur, peserta.jenisKelamin)
+    : null;
+
+  const diff =
+    latest && prev && latest.beratBadan != null && prev.beratBadan != null
+      ? latest.beratBadan - prev.beratBadan
+      : null;
+
+  const growthStatus =
+    diff == null
+      ? null
+      : diff > 0.05
+      ? { label: "Naik (N)", icon: "\u2191", badge: "bg-green-100 text-green-700" }
+      : {
+          label: "Tidak Naik (T)",
+          icon: "\u2193",
+          badge: "bg-orange-100 text-orange-700",
+        };
+
+  const diffText =
+    diff == null
+      ? "-"
+      : diff > 0
+      ? `+${diff.toFixed(1)} kg dari bulan lalu`
+      : diff < 0
+      ? `${diff.toFixed(1)} kg dari bulan lalu`
+      : "\u00b10.0 kg dari bulan lalu";
+
+  const saran =
+    latest?.catatan ||
+    (zone
+      ? zone.key === "bgm" || zone.key === "kuningBawah"
+        ? "Berat badan anak perlu ditingkatkan. Pastikan asupan gizi cukup dan berkonsultasilah dengan kader atau petugas kesehatan di Posyandu."
+        : zone.key === "hijauMuda" || zone.key === "hijauTua"
+        ? "Pertumbuhan anak Anda baik. Pertahankan makanan bergizi seimbang, ASI eksklusif (usia di bawah 2 tahun), dan rutin hadir ke Posyandu."
+        : "Berat badan anak berada di atas standar. Jaga pola makan seimbang, batasi makanan manis, tingkatkan aktivitas fisik, dan konsultasikan ke Posyandu."
+      : "Rutin bawa anak ke Posyandu setiap bulan untuk penimbangan dan pantauan pertumbuhan bersama kader.");
 
   const info = [
     { label: "Jenis Kelamin", value: peserta.jenisKelamin === "L" ? "Laki-laki" : "Perempuan" },
@@ -113,7 +129,7 @@ function ParentPesertaDetail() {
         ← Kembali ke Profil Peserta
       </Link>
 
-      <div className="bg-white rounded-2xl shadow-sm p-6">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-primary-100 text-primary-700 flex items-center justify-center text-2xl font-bold">
             {peserta.nama.charAt(0)}
@@ -147,88 +163,76 @@ function ParentPesertaDetail() {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm p-6">
-        <h2 className="font-semibold text-gray-800 mb-4">
-          Grafik Pertumbuhan (Berat Badan & Tinggi Badan)
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-400 mb-4">
+          Ringkasan Kesehatan
         </h2>
-        <p className="text-sm text-gray-500 mb-4">
-          Sumbu X menampilkan bulan penimbangan (Januari–Desember) beserta umur
-          anak pada saat itu.
-        </p>
-        {chartData.length === 0 ? (
-          <div className="border-2 border-dashed border-gray-200 rounded-xl h-72 flex flex-col items-center justify-center text-gray-400">
-            <div className="text-4xl mb-3">📈</div>
-            <p className="font-medium">Belum ada data penimbangan</p>
-            <p className="text-sm mt-1">
-              Grafik akan tampil setelah ada riwayat penimbangan
-            </p>
-          </div>
+
+        {measurements.length === 0 ? (
+          <p className="text-sm text-gray-400">
+            Belum ada data penimbangan. Bawa anak Anda ke Posyandu setiap bulan
+            supaya tumbuh kembangnya terpantau.
+          </p>
         ) : (
-          <>
-            <ResponsiveContainer width="100%" height={320}>
-              <LineChart
-                data={chartData}
-                margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis
-                  dataKey="label"
-                  tick={{ fontSize: 12 }}
-                  interval={0}
-                  tickFormatter={(label, index) => {
-                    const d = chartData[index];
-                    return d && d.umur ? `${label}\n(${d.umur})` : label;
-                  }}
-                />
-                <YAxis tick={{ fontSize: 12 }} />
-                <Tooltip
-                  formatter={(value, name) =>
-                    name === "Berat (kg)" ? [`${value} kg`, name] : [`${value} cm`, name]
-                  }
-                  labelFormatter={(label) => `Bulan ${label}`}
-                />
-                <Legend />
-                <Line
-                  type="monotone"
-                  dataKey="Berat (kg)"
-                  stroke="#16a34a"
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                  connectNulls
-                />
-                <Line
-                  type="monotone"
-                  dataKey="Tinggi (cm)"
-                  stroke="#2563eb"
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                  connectNulls
-                />
-              </LineChart>
-            </ResponsiveContainer>
-            <div className="mt-1 px-6 flex justify-between text-[11px] text-gray-400">
-              {chartData.map((d, i) => (
-                <span key={i}>{d.label}</span>
-              ))}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-gray-400 font-medium">
+                Status Gizi
+              </p>
+              {zone ? (
+                <span
+                  className={`mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold ${
+                    zone.key === "merahAtas"
+                      ? "bg-orange-100 text-orange-700"
+                      : zone.badge
+                  }`}
+                >
+                  <span
+                    className="w-2.5 h-2.5 rounded-full border border-gray-300"
+                    style={{ backgroundColor: zone.dot }}
+                  ></span>
+                  {zone.label}
+                </span>
+              ) : (
+                <p className="mt-2 text-sm font-medium text-gray-500">
+                  Belum dapat dihitung
+                </p>
+              )}
             </div>
-            <div className="mt-3 flex flex-wrap items-center justify-center gap-6 text-sm">
-              <span className="inline-flex items-center gap-2 text-gray-700">
-                <span className="w-3 h-3 rounded-full bg-green-600"></span>
-                Berat Badan (kg)
-              </span>
-              <span className="inline-flex items-center gap-2 text-gray-700">
-                <span className="w-3 h-3 rounded-full bg-blue-600"></span>
-                Tinggi Badan (cm)
-              </span>
-              <span className="text-xs text-gray-400">
-                Bulan (Jan–Des) · Umur anak saat penimbangan
-              </span>
+
+            <div className="sm:border-l sm:pl-5 sm:border-gray-100">
+              <p className="text-xs uppercase tracking-wide text-gray-400 font-medium">
+                Timbangan Terakhir
+              </p>
+              <p className="mt-2 text-xl font-bold text-gray-800">
+                {latest.beratBadan} kg
+                <span className="font-medium text-gray-400"> | </span>
+                {latest.tinggiBadan ?? "-"} cm
+              </p>
+              <p className="mt-1 text-xs text-gray-400">
+                {formatTanggal(latest.tanggal)}
+                {growthStatus && ` · ${growthStatus.icon} ${growthStatus.label} (${diffText})`}
+              </p>
             </div>
-          </>
+
+            <div className="sm:border-l sm:pl-5 sm:border-gray-100">
+              <p className="text-xs uppercase tracking-wide text-gray-400 font-medium">
+                Catatan Kader
+              </p>
+              <p className="mt-2 text-sm text-gray-600 leading-relaxed">{saran}</p>
+            </div>
+          </div>
         )}
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm p-6">
+      <KmsChart
+        data={measurements}
+        birthDate={peserta.tanggalLahir}
+        sex={peserta.jenisKelamin}
+        title="Grafik Pertumbuhan (Berat Badan / Umur)"
+      />
+
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
         <h2 className="font-semibold text-gray-800 mb-4">Riwayat Penimbangan</h2>
         {measurements.length === 0 ? (
           <p className="text-sm text-gray-400">Belum ada data penimbangan</p>
@@ -268,7 +272,7 @@ function ParentPesertaDetail() {
         )}
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm p-6">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
         <h2 className="font-semibold text-gray-800 mb-4">Riwayat Imunisasi</h2>
         {immunizations.length === 0 ? (
           <p className="text-sm text-gray-400">Belum ada data imunisasi</p>

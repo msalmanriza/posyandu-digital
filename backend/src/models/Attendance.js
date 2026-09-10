@@ -18,6 +18,11 @@ const attendanceSchema = new mongoose.Schema(
       required: [true, "Status kehadiran wajib diisi"],
       default: "Hadir",
     },
+    catatan: {
+      type: String,
+      trim: true,
+      default: "",
+    },
   },
   {
     timestamps: true,

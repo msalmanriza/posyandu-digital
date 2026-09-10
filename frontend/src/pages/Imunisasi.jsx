@@ -6,12 +6,14 @@ const fields = [
   { name: "tanggal", label: "Tanggal Imunisasi", type: "date", required: true },
   { name: "jenisVaksin", label: "Jenis Vaksin", type: "select", required: true, options: VAKSIN_LIST },
   { name: "usiaBulan", label: "Usia (bulan)", type: "number", min: "0", placeholder: "Contoh: 6" },
+  { name: "catatan", label: "Catatan", type: "textarea", placeholder: "Tulis catatan jika ada..." },
 ];
 
 const columns = [
   { key: "peserta", label: "Peserta", render: (r) => r.peserta?.nama || "-" },
   { key: "jenisVaksin", label: "Jenis Vaksin" },
   { key: "usiaBulan", label: "Usia (bln)", render: (r) => r.usiaBulan ?? "-" },
+  { key: "catatan", label: "Catatan", render: (r) => r.catatan || "-" },
 ];
 
 const initialForm = {
@@ -19,6 +21,7 @@ const initialForm = {
   tanggal: todayString(),
   jenisVaksin: "",
   usiaBulan: "",
+  catatan: "",
 };
 
 function Imunisasi() {

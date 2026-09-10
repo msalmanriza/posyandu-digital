@@ -4,6 +4,7 @@ const logSchema = new mongoose.Schema(
   {
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     namaUser: { type: String, trim: true },
+    emailUser: { type: String, trim: true },
     role: { type: String, trim: true },
     modul: { type: String, trim: true },
     aksi: { type: String, trim: true },

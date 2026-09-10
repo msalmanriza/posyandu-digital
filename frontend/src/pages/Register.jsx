@@ -12,19 +12,10 @@ const initialForm = {
   konfirmasiPassword: "",
   telepon: "",
   alamat: "",
-  umur: "",
+  tanggalLahir: "",
   statusKb: "Tidak",
-  jumlahAnak: "",
   statusHamil: "Tidak",
   statusBPJS: "Tidak",
-};
-
-const initialAnak = {
-  nama: "",
-  tanggalLahir: "",
-  nik: "",
-  jenisKelamin: "L",
-  statusBPJSAnak: "Tidak",
 };
 
 const statusOptions = ["Ya", "Tidak"];
@@ -33,8 +24,6 @@ function Register() {
   const { user, setSession } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState(initialForm);
-  const [anak, setAnak] = useState(initialAnak);
-  const [anakAktif, setAnakAktif] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -57,10 +46,6 @@ function Register() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleAnakChange = (e) => {
-    setAnak({ ...anak, [e.target.name]: e.target.value });
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -70,21 +55,7 @@ function Register() {
     }
     setLoading(true);
     try {
-      const { konfirmasiPassword, ...formData } = form;
-      const payload = {
-        ...formData,
-        umur: Number(form.umur),
-        jumlahAnak: Number(form.jumlahAnak),
-      };
-      if (anakAktif && anak.nama && anak.tanggalLahir && anak.jenisKelamin) {
-        payload.anak = {
-          nama: anak.nama,
-          tanggalLahir: anak.tanggalLahir,
-          nik: anak.nik || "",
-          jenisKelamin: anak.jenisKelamin,
-          statusBPJSAnak: anak.statusBPJSAnak,
-        };
-      }
+      const { konfirmasiPassword, ...payload } = form;
       const { data } = await api.post("/auth/register-parent", payload);
       setSession(
         { _id: data._id, nama: data.nama, email: data.email, role: data.role },
@@ -199,30 +170,14 @@ function Register() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className={labelClass}>Umur Orang Tua</label>
+                    <label className={labelClass}>Tanggal Lahir Orang Tua</label>
                     <input
-                      type="number"
-                      name="umur"
-                      value={form.umur}
+                      type="date"
+                      name="tanggalLahir"
+                      value={form.tanggalLahir}
                       onChange={handleChange}
                       required
-                      min={15}
-                      max={100}
                       className={inputClass}
-                      placeholder="Contoh: 30"
-                    />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Jumlah Anak</label>
-                    <input
-                      type="number"
-                      name="jumlahAnak"
-                      value={form.jumlahAnak}
-                      onChange={handleChange}
-                      required
-                      min={0}
-                      className={inputClass}
-                      placeholder="Contoh: 2"
                     />
                   </div>
                 </div>
@@ -274,90 +229,6 @@ function Register() {
                   </div>
                 </div>
               </div>
-            </div>
-
-            <div className="pt-4 border-t border-gray-100">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="font-semibold text-gray-800">Data Anak / Balita</h2>
-                <label className="inline-flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={anakAktif}
-                    onChange={(e) => setAnakAktif(e.target.checked)}
-                    className="w-4 h-4 text-primary-600"
-                  />
-                  Isi sekarang (opsional)
-                </label>
-              </div>
-
-              {anakAktif ? (
-                <div className="space-y-4">
-                  <div>
-                    <label className={labelClass}>Nama Anak</label>
-                    <input
-                      name="nama"
-                      value={anak.nama}
-                      onChange={handleAnakChange}
-                      className={inputClass}
-                      placeholder="Nama lengkap anak"
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className={labelClass}>Tanggal Lahir</label>
-                      <input
-                        type="date"
-                        name="tanggalLahir"
-                        value={anak.tanggalLahir}
-                        onChange={handleAnakChange}
-                        className={inputClass}
-                      />
-                    </div>
-                    <div>
-                      <label className={labelClass}>NIK Anak (opsional)</label>
-                      <input
-                        name="nik"
-                        value={anak.nik}
-                        onChange={handleAnakChange}
-                        maxLength={16}
-                        className={inputClass}
-                        placeholder="16 digit NIK"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className={labelClass}>Jenis Kelamin</label>
-                      <select
-                        name="jenisKelamin"
-                        value={anak.jenisKelamin}
-                        onChange={handleAnakChange}
-                        className={inputClass}
-                      >
-                        <option value="L">Laki-laki</option>
-                        <option value="P">Perempuan</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className={labelClass}>Status BPJS Anak</label>
-                      <select
-                        name="statusBPJSAnak"
-                        value={anak.statusBPJSAnak}
-                        onChange={handleAnakChange}
-                        className={inputClass}
-                      >
-                        <option value="Tidak">Tidak</option>
-                        <option value="Ya">Ya</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-sm text-gray-400">
-                  Anda dapat menambahkan data anak setelah mendaftar melalui
-                  Portal Orang Tua.
-                </p>
-              )}
             </div>
 
             <button

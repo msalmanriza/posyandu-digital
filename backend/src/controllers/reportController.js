@@ -16,9 +16,15 @@ export const getRekap = async (req, res) => {
     const filter = { tanggal: { $gte: start, $lt: end } };
 
     const [penimbangan, imunisasi, kehadiran] = await Promise.all([
-      Measurement.find(filter).populate("peserta", "nama").sort({ tanggal: 1 }),
-      Immunization.find(filter).populate("peserta", "nama").sort({ tanggal: 1 }),
-      Attendance.find(filter).populate("peserta", "nama").sort({ tanggal: 1 }),
+      Measurement.find(filter)
+        .populate("peserta", "nama tanggalLahir")
+        .sort({ tanggal: 1 }),
+      Immunization.find(filter)
+        .populate("peserta", "nama tanggalLahir")
+        .sort({ tanggal: 1 }),
+      Attendance.find(filter)
+        .populate("peserta", "nama tanggalLahir")
+        .sort({ tanggal: 1 }),
     ]);
 
     const hadir = kehadiran.filter((k) => k.statusKehadiran === "Hadir").length;

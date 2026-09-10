@@ -5,6 +5,7 @@ import api from "../services/api";
 import { formatTanggal } from "../utils/helpers";
 import TrendChart from "../components/TrendChart";
 import KirimWhatsApp from "../components/KirimWhatsApp";
+import NotifBell from "../components/NotifBell";
 
 const modulIcons = {
   Penimbangan: "⚖️",
@@ -44,6 +45,17 @@ function AdminDashboard() {
       .get("/dashboard/activities", { params: { limit: 10 } })
       .then(({ data }) => setActivities(data))
       .catch(() => setActivities([]));
+  }, [user?.role]);
+
+  useEffect(() => {
+    if (user?.role !== "admin") return;
+    const timer = setInterval(() => {
+      api
+        .get("/dashboard/activities", { params: { limit: 10 } })
+        .then(({ data }) => setActivities(data))
+        .catch(() => {});
+    }, 30000);
+    return () => clearInterval(timer);
   }, [user?.role]);
 
   if (user?.role !== "admin") {
@@ -88,9 +100,12 @@ function AdminDashboard() {
             Pantau aktivitas seluruh Posyandu dari satu layar.
           </p>
         </div>
-        <span className="inline-flex self-start px-3 py-1 text-xs font-semibold bg-gray-800 text-white rounded-full">
-          Dashboard Admin / Pengawas
-        </span>
+        <div className="flex items-center gap-3 self-end">
+          <NotifBell />
+          <span className="inline-flex px-3 py-1 text-xs font-semibold bg-gray-800 text-white rounded-full">
+            Dashboard Admin / Pengawas
+          </span>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -156,7 +171,12 @@ function AdminDashboard() {
                       {formatTanggal(log.createdAt)}
                     </td>
                     <td className="py-3 pr-4 font-medium text-gray-800">
-                      {log.namaUser || "-"}
+                      <span className="block">{log.namaUser || "-"}</span>
+                      {log.emailUser && (
+                        <span className="block text-xs text-gray-400 font-normal">
+                          {log.emailUser}
+                        </span>
+                      )}
                     </td>
                     <td className="py-3 pr-4 text-gray-600">
                       <span className="inline-flex items-center gap-2">

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import api from "../services/api";
 import { inputClass, labelClass } from "../components/ui";
 import { formatTanggal } from "../utils/helpers";
@@ -25,10 +25,47 @@ const statusColors = {
   Izin: "bg-blue-100 text-blue-700",
 };
 
+const kategoriOptions = [
+  { value: "", label: "Semua Kategori" },
+  { value: "balita", label: "Balita (1 - 59 Bulan)" },
+  { value: "prasekolah-remaja", label: "Anak Prasekolah & Remaja (6 - 18 Tahun)" },
+  { value: "produktif-dewasa", label: "Usia Produktif & Dewasa (19 - 59 Tahun)" },
+  { value: "lansia", label: "Lansia (>= 60 Tahun)" },
+];
+
+const hitungUmurBulan = (tanggalLahir, tanggal) => {
+  if (!tanggalLahir) return null;
+  const lahir = new Date(tanggalLahir);
+  const tgl = tanggal ? new Date(tanggal) : new Date();
+  return Math.max(
+    0,
+    (tgl.getFullYear() - lahir.getFullYear()) * 12 +
+      (tgl.getMonth() - lahir.getMonth())
+  );
+};
+
+const cocokKategori = (umurBulan, kategori) => {
+  if (!kategori) return true;
+  if (umurBulan == null) return false;
+  switch (kategori) {
+    case "balita":
+      return umurBulan >= 1 && umurBulan <= 59;
+    case "prasekolah-remaja":
+      return umurBulan >= 72 && umurBulan <= 216;
+    case "produktif-dewasa":
+      return umurBulan >= 228 && umurBulan <= 708;
+    case "lansia":
+      return umurBulan >= 720;
+    default:
+      return true;
+  }
+};
+
 function Laporan() {
   const now = new Date();
-  const [bulan, setBulan] = useState(now.getMonth() + 1);
-  const [tahun, setTahun] = useState(now.getFullYear());
+  const [selectedBulan, setSelectedBulan] = useState(now.getMonth() + 1);
+  const [selectedTahun, setSelectedTahun] = useState(now.getFullYear());
+  const [selectedKategori, setSelectedKategori] = useState("");
   const [rekap, setRekap] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -43,7 +80,7 @@ function Laporan() {
     setError("");
     try {
       const { data } = await api.get("/reports/rekap", {
-        params: { bulan, tahun },
+        params: { selectedBulan, selectedTahun },
       });
       setRekap(data);
     } catch (err) {
@@ -51,13 +88,41 @@ function Laporan() {
     } finally {
       setLoading(false);
     }
-  }, [bulan, tahun]);
+  }, [selectedBulan, selectedTahun]);
 
   useEffect(() => {
     fetchRekap();
   }, [fetchRekap]);
 
-  const exportExcel = async () => {
+  const filteredRekap = useMemo(() => {
+    if (!rekap) return null;
+    const filterData = (arr) =>
+      arr.filter((d) =>
+        cocokKategori(
+          hitungUmurBulan(d.peserta?.tanggalLahir, d.tanggal),
+          selectedKategori
+        )
+      );
+
+    const penimbangan = filterData(rekap.penimbangan.data);
+    const imunisasi = filterData(rekap.imunisasi.data);
+    const kehadiran = filterData(rekap.kehadiran.data);
+    const hadir = kehadiran.filter((k) => k.statusKehadiran === "Hadir").length;
+    const tidakHadir = kehadiran.filter(
+      (k) => k.statusKehadiran === "Tidak Hadir"
+    ).length;
+    const sakit = kehadiran.filter((k) => k.statusKehadiran === "Sakit").length;
+    const izin = kehadiran.filter((k) => k.statusKehadiran === "Izin").length;
+
+    return {
+      ...rekap,
+      penimbangan: { total: penimbangan.length, data: penimbangan },
+      imunisasi: { total: imunisasi.length, data: imunisasi },
+      kehadiran: { total: kehadiran.length, hadir, tidakHadir, sakit, izin, data: kehadiran },
+    };
+  }, [rekap, selectedKategori]);
+
+  const handleExportExcel = async () => {
     if (!rekap) return;
     const XLSX = await import("xlsx");
     const ringkasan = [
@@ -117,26 +182,34 @@ function Laporan() {
     );
   };
 
+  const handleExportPDF = () => {
+    if (!filteredRekap) return;
+    window.print();
+  };
+
   const summaryCards = [
     {
       label: "Penimbangan",
-      value: rekap?.penimbangan?.total ?? 0,
+      value: filteredRekap?.penimbangan?.total ?? 0,
       icon: "⚖️",
       color: "bg-blue-100 text-blue-700",
     },
     {
       label: "Imunisasi",
-      value: rekap?.imunisasi?.total ?? 0,
+      value: filteredRekap?.imunisasi?.total ?? 0,
       icon: "💉",
       color: "bg-amber-100 text-amber-700",
     },
     {
       label: "Kehadiran",
-      value: rekap?.kehadiran?.total ?? 0,
+      value: filteredRekap?.kehadiran?.total ?? 0,
       icon: "📋",
       color: "bg-purple-100 text-purple-700",
     },
   ];
+
+  const kategoriLabel =
+    kategoriOptions.find((k) => k.value === selectedKategori)?.label || "";
 
   return (
     <div className="space-y-6">
@@ -145,7 +218,9 @@ function Laporan() {
           Laporan Pelayanan Posyandu
         </h1>
         <p className="text-center text-gray-600 mt-1">
-          {rekap?.periode?.label || `${bulanNames[bulan - 1]} ${tahun}`}
+          {rekap?.periode?.label ||
+            `${bulanNames[selectedBulan - 1]} ${selectedTahun}`}
+          {kategoriLabel && ` \u2014 Kategori: ${kategoriLabel}`}
         </p>
         <hr className="my-4" />
       </div>
@@ -161,8 +236,8 @@ function Laporan() {
           <div>
             <label className={labelClass}>Bulan</label>
             <select
-              value={bulan}
-              onChange={(e) => setBulan(Number(e.target.value))}
+              value={selectedBulan}
+              onChange={(e) => setSelectedBulan(Number(e.target.value))}
               className={`${inputClass} w-40`}
             >
               {bulanNames.map((name, i) => (
@@ -175,8 +250,8 @@ function Laporan() {
           <div>
             <label className={labelClass}>Tahun</label>
             <select
-              value={tahun}
-              onChange={(e) => setTahun(Number(e.target.value))}
+              value={selectedTahun}
+              onChange={(e) => setSelectedTahun(Number(e.target.value))}
               className={`${inputClass} w-32`}
             >
               {years.map((y) => (
@@ -186,17 +261,31 @@ function Laporan() {
               ))}
             </select>
           </div>
+          <div>
+            <label className={labelClass}>Kategori / Usia (ILP)</label>
+            <select
+              value={selectedKategori}
+              onChange={(e) => setSelectedKategori(e.target.value)}
+              className={`${inputClass} w-64 sm:w-72`}
+            >
+              {kategoriOptions.map((k) => (
+                <option key={k.value} value={k.value}>
+                  {k.label}
+                </option>
+              ))}
+            </select>
+          </div>
           <div className="flex gap-2">
             <button
-              onClick={exportExcel}
+              onClick={handleExportExcel}
               disabled={!rekap}
               className="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg disabled:opacity-50"
             >
               ⬇ Export Excel
             </button>
             <button
-              onClick={() => window.print()}
-              disabled={!rekap}
+              onClick={handleExportPDF}
+              disabled={!filteredRekap}
               className="px-4 py-2 text-sm font-medium text-white bg-gray-700 hover:bg-gray-800 rounded-lg disabled:opacity-50"
             >
               🖨 Cetak / PDF
@@ -210,7 +299,7 @@ function Laporan() {
       {loading && !rekap ? (
         <div className="text-center py-10 text-gray-400">Memuat laporan...</div>
       ) : (
-        rekap && (
+        filteredRekap && (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {summaryCards.map((card) => (
@@ -236,16 +325,16 @@ function Laporan() {
                 Rincian Kehadiran:
               </span>
               <span className="px-2 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-700">
-                Hadir: {rekap.kehadiran.hadir}
+                Hadir: {filteredRekap.kehadiran.hadir}
               </span>
               <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
-                Tidak Hadir: {rekap.kehadiran.tidakHadir}
+                Tidak Hadir: {filteredRekap.kehadiran.tidakHadir}
               </span>
               <span className="px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
-                Sakit: {rekap.kehadiran.sakit}
+                Sakit: {filteredRekap.kehadiran.sakit}
               </span>
               <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                Izin: {rekap.kehadiran.izin}
+                Izin: {filteredRekap.kehadiran.izin}
               </span>
             </div>
 
@@ -267,14 +356,14 @@ function Laporan() {
                     </tr>
                   </thead>
                   <tbody>
-                    {rekap.penimbangan.data.length === 0 ? (
+                    {(filteredRekap?.penimbangan?.data || []).length === 0 ? (
                       <tr>
                         <td colSpan="7" className="px-4 py-6 text-center text-gray-400">
                           Tidak ada data
                         </td>
                       </tr>
                     ) : (
-                      rekap.penimbangan.data.map((d, i) => (
+                      (filteredRekap?.penimbangan?.data || []).map((d, i) => (
                         <tr key={d._id} className="border-b border-gray-50">
                           <td className="px-4 py-3 text-gray-500">{i + 1}</td>
                           <td className="px-4 py-3 text-gray-600">
@@ -315,14 +404,14 @@ function Laporan() {
                     </tr>
                   </thead>
                   <tbody>
-                    {rekap.imunisasi.data.length === 0 ? (
+                    {(filteredRekap?.imunisasi?.data || []).length === 0 ? (
                       <tr>
                         <td colSpan="5" className="px-4 py-6 text-center text-gray-400">
                           Tidak ada data
                         </td>
                       </tr>
                     ) : (
-                      rekap.imunisasi.data.map((d, i) => (
+                      (filteredRekap?.imunisasi?.data || []).map((d, i) => (
                         <tr key={d._id} className="border-b border-gray-50">
                           <td className="px-4 py-3 text-gray-500">{i + 1}</td>
                           <td className="px-4 py-3 text-gray-600">
@@ -356,14 +445,14 @@ function Laporan() {
                     </tr>
                   </thead>
                   <tbody>
-                    {rekap.kehadiran.data.length === 0 ? (
+                    {(filteredRekap?.kehadiran?.data || []).length === 0 ? (
                       <tr>
                         <td colSpan="4" className="px-4 py-6 text-center text-gray-400">
                           Tidak ada data
                         </td>
                       </tr>
                     ) : (
-                      rekap.kehadiran.data.map((d, i) => (
+                      (filteredRekap?.kehadiran?.data || []).map((d, i) => (
                         <tr key={d._id} className="border-b border-gray-50">
                           <td className="px-4 py-3 text-gray-500">{i + 1}</td>
                           <td className="px-4 py-3 text-gray-600">

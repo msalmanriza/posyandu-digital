@@ -24,9 +24,7 @@ const orangTuaSchema = new mongoose.Schema(
     },
     umur: {
       type: Number,
-      required: [true, "Umur orang tua wajib diisi"],
       min: [15, "Umur tidak valid"],
-      max: [100, "Umur tidak valid"],
     },
     tanggalLahir: {
       type: Date,
@@ -38,8 +36,8 @@ const orangTuaSchema = new mongoose.Schema(
     },
     jumlahAnak: {
       type: Number,
-      required: [true, "Jumlah anak wajib diisi"],
       min: [0, "Jumlah anak tidak valid"],
+      default: 0,
     },
     statusHamil: {
       type: String,

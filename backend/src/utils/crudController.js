@@ -13,6 +13,7 @@ const crudController = (Model, options = {}) => {
     return logActivity({
       userId: req.user?._id,
       namaUser: req.user?.nama,
+      emailUser: req.user?.email,
       role: req.user?.role,
       modul: activity.modul,
       aksi,
