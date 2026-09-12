@@ -4,10 +4,12 @@ import { useAuth } from "../../context/AuthContext";
 const kaderMenu = [
   { to: "/dashboard", label: "Dashboard", icon: "🏠" },
   { to: "/orang-tua", label: "Orang Tua", icon: "👨‍👩‍👧" },
-  { to: "/peserta", label: "Peserta Posyandu (Balita)", icon: "👶" },
+  { to: "/peserta", label: "Peserta Posyandu", icon: "👶" },
   { to: "/penimbangan", label: "Penimbangan", icon: "⚖️" },
   { to: "/imunisasi", label: "Imunisasi", icon: "💉" },
   { to: "/vitamin", label: "Vitamin", icon: "💊" },
+  { to: "/skrining-lansia", label: "Skrining Lansia", icon: "🩺" },
+  { to: "/pemeriksaan-dewasa", label: "Periksa Dewasa & Lansia", icon: "🩻" },
   { to: "/kehadiran", label: "Kehadiran", icon: "📋" },
   { to: "/jadwal", label: "Jadwal", icon: "📅" },
   { to: "/pengumuman", label: "Pengumuman", icon: "📢" },
@@ -23,6 +25,8 @@ const adminMenu = [
   { to: "/penimbangan", label: "Penimbangan", icon: "⚖️", indent: true },
   { to: "/imunisasi", label: "Imunisasi", icon: "💉", indent: true },
   { to: "/vitamin", label: "Vitamin", icon: "💊", indent: true },
+  { to: "/skrining-lansia", label: "Skrining Lansia", icon: "🩺", indent: true },
+  { to: "/pemeriksaan-dewasa", label: "Periksa Dewasa & Lansia", icon: "🩻", indent: true },
   { to: "/laporan", label: "Laporan & Export", icon: "📊" },
 ];
 
@@ -53,7 +57,7 @@ function Sidebar({ onNavigate }) {
   return (
     <aside className="w-64 h-full bg-white border-r border-gray-200 flex flex-col">
       <div className="px-5 py-5 border-b border-gray-100">
-        <h1 className="text-lg font-bold text-primary-600">Posyandu ILP</h1>
+        <h1 className="text-lg font-bold text-primary-600">ILPKartini21</h1>
         <p className="text-xs text-gray-400">Integrasi Layanan Primer</p>
       </div>
 

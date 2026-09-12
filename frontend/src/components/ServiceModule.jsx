@@ -248,11 +248,21 @@ function ServiceModule({ apiPath, title, description, fields, columns, initialFo
                     className={inputClass}
                   >
                     {!f.required && <option value="">-- Pilih --</option>}
-                    {f.options.map((o) => (
-                      <option key={o} value={o}>
-                        {o}
-                      </option>
-                    ))}
+                    {f.options.map((o, oi) =>
+                      typeof o === "string" ? (
+                        <option key={oi} value={o}>
+                          {o}
+                        </option>
+                      ) : (
+                        <optgroup key={oi} label={o.label}>
+                          {o.options.map((opt) => (
+                            <option key={opt} value={opt}>
+                              {opt}
+                            </option>
+                          ))}
+                        </optgroup>
+                      )
+                    )}
                   </select>
                 ) : f.type === "textarea" ? (
                   <textarea

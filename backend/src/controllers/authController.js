@@ -50,6 +50,7 @@ export const registerParent = async (req, res) => {
       telepon,
       alamat,
       tanggalLahir,
+      jenisKelamin,
       statusKb,
       statusHamil,
       statusBPJS,
@@ -58,6 +59,8 @@ export const registerParent = async (req, res) => {
     if (!nama || !email || !password) {
       return res.status(400).json({ message: "Nama, email, dan password wajib diisi" });
     }
+
+    const jk = jenisKelamin === "L" ? "L" : "P";
 
     const userExists = await User.findOne({ email });
     if (userExists) {
@@ -79,11 +82,11 @@ export const registerParent = async (req, res) => {
     const orangTua = await OrangTua.create({
       nama,
       nik,
-      jenisKelamin: "P",
+      jenisKelamin: jk,
       umur,
       tanggalLahir: tanggalLahir || undefined,
       statusKb: statusKb || "Tidak",
-      statusHamil: statusHamil || "Tidak",
+      statusHamil: jk === "L" ? "Tidak" : statusHamil || "Tidak",
       statusBPJS: statusBPJS || "Tidak",
       telepon: telepon || "",
       alamat: alamat || "",

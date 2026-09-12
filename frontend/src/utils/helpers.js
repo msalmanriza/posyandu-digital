@@ -50,3 +50,79 @@ export const hitungUmur = (tanggalLahir) => {
   }
   return `${tahun} thn ${bulan} bln`;
 };
+
+export const hitungSkorBarthel = (items = {}) => {
+  const bobot = { Tergantung: 0, "Perlu Bantuan": 1, Mandiri: 2 };
+  const fields = [
+    "makan",
+    "mandi",
+    "perawatanDiri",
+    "berpakaian",
+    "kontrolBAB",
+    "kontrolBAK",
+    "toileting",
+    "berpindah",
+    "berjalan",
+    "naikTangga",
+  ];
+  return fields.reduce((total, key) => total + (bobot[items[key]] ?? 2), 0);
+};
+
+export const statusSkorBarthel = (skor) => {
+  if (skor >= 15) return "Mandiri";
+  if (skor >= 8) return "Ketergantungan Sedang";
+  return "Ketergantungan Berat";
+};
+
+export const hitungIMT = (beratBadan, tinggiBadan) => {
+  if (!beratBadan || !tinggiBadan || tinggiBadan <= 0) return null;
+  const tbM = tinggiBadan / 100;
+  return Math.round((beratBadan / (tbM * tbM)) * 10) / 10;
+};
+
+export const kategoriIMT = (imt) => {
+  if (imt == null) return "";
+  if (imt < 18.5) return "Kurus (BB Kurang)";
+  if (imt < 23) return "Normal";
+  if (imt < 25) return "Berat Badan Lebih (Overweight)";
+  if (imt < 30) return "Obesitas I";
+  return "Obesitas II";
+};
+
+export const kategoriTekananDarah = (sistolik, diastolik) => {
+  if (!sistolik || !diastolik) return "";
+  if (sistolik < 120 && diastolik < 80) return "Normal";
+  if (sistolik < 140 && diastolik < 90) return "Pra-Hipertensi";
+  if (sistolik < 160 && diastolik < 100) return "Hipertensi Derajat 1";
+  return "Hipertensi Derajat 2";
+};
+
+export const kategoriGulaDarah = (gulaDarah) => {
+  if (!gulaDarah) return "";
+  if (gulaDarah < 140) return "Normal";
+  if (gulaDarah < 200) return "Berisiko Diabetes (IGT)";
+  return "Kemungkinan Diabetes Melitus";
+};
+
+export const skorPUMA = ({
+  puKelamin = 0,
+  puUsia = 0,
+  puRokok = 0,
+  puSesak = 0,
+  puDahak = 0,
+  puBatuk = 0,
+  puSpirometri = 0,
+} = {}) =>
+  Number(puKelamin) +
+  Number(puUsia) +
+  Number(puRokok) +
+  Number(puSesak) +
+  Number(puDahak) +
+  Number(puBatuk) +
+  Number(puSpirometri);
+
+export const kategoriPUMA = (skor) => {
+  if (skor == null) return "";
+  if (skor >= 5) return "Risiko Tinggi PPOK";
+  return "Risiko Rendah";
+};

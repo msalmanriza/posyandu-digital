@@ -77,7 +77,12 @@ function OrangTua() {
   };
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setForm({
+      ...form,
+      [name]: value,
+      ...(name === "jenisKelamin" && value === "L" ? { statusHamil: "Tidak" } : {}),
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -333,7 +338,11 @@ function OrangTua() {
               />
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-4">
+          <div
+            className={`grid grid-cols-1 gap-4 ${
+              form.jenisKelamin === "L" ? "sm:grid-cols-2" : "sm:grid-cols-3"
+            }`}
+          >
             <div>
               <label className={labelClass}>Status KB</label>
               <select
@@ -349,21 +358,23 @@ function OrangTua() {
                 ))}
               </select>
             </div>
-            <div>
-              <label className={labelClass}>Status Hamil</label>
-              <select
-                name="statusHamil"
-                value={form.statusHamil}
-                onChange={handleChange}
-                className={inputClass}
-              >
-                {statusOptions.map((o) => (
-                  <option key={o} value={o}>
-                    {o}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {form.jenisKelamin === "P" && (
+              <div>
+                <label className={labelClass}>Status Hamil</label>
+                <select
+                  name="statusHamil"
+                  value={form.statusHamil}
+                  onChange={handleChange}
+                  className={inputClass}
+                >
+                  {statusOptions.map((o) => (
+                    <option key={o} value={o}>
+                      {o}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div>
               <label className={labelClass}>Status BPJS</label>
               <select

@@ -13,6 +13,7 @@ const initialForm = {
   telepon: "",
   alamat: "",
   tanggalLahir: "",
+  jenisKelamin: "P",
   statusKb: "Tidak",
   statusHamil: "Tidak",
   statusBPJS: "Tidak",
@@ -43,7 +44,12 @@ function Register() {
   }
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setForm({
+      ...form,
+      [name]: value,
+      ...(name === "jenisKelamin" && value === "L" ? { statusHamil: "Tidak" } : {}),
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -165,10 +171,22 @@ function Register() {
                     onChange={handleChange}
                     rows="2"
                     className={inputClass}
-                    placeholder="Alamat rumah Anda"
+                    placeholder="Masukan alamat lengkap beserta RT dan RW"
                   />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className={labelClass}>Jenis Kelamin</label>
+                    <select
+                      name="jenisKelamin"
+                      value={form.jenisKelamin}
+                      onChange={handleChange}
+                      className={inputClass}
+                    >
+                      <option value="L">Laki-laki</option>
+                      <option value="P">Perempuan</option>
+                    </select>
+                  </div>
                   <div>
                     <label className={labelClass}>Tanggal Lahir Orang Tua</label>
                     <input
@@ -181,7 +199,7 @@ function Register() {
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className={labelClass}>Status KB</label>
                     <select
@@ -197,36 +215,38 @@ function Register() {
                       ))}
                     </select>
                   </div>
-                  <div>
-                    <label className={labelClass}>Status Hamil</label>
-                    <select
-                      name="statusHamil"
-                      value={form.statusHamil}
-                      onChange={handleChange}
-                      className={inputClass}
-                    >
-                      {statusOptions.map((o) => (
-                        <option key={o} value={o}>
-                          {o}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className={labelClass}>Status BPJS</label>
-                    <select
-                      name="statusBPJS"
-                      value={form.statusBPJS}
-                      onChange={handleChange}
-                      className={inputClass}
-                    >
-                      {statusOptions.map((o) => (
-                        <option key={o} value={o}>
-                          {o}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  {form.jenisKelamin === "P" && (
+                    <div>
+                      <label className={labelClass}>Status Hamil</label>
+                      <select
+                        name="statusHamil"
+                        value={form.statusHamil}
+                        onChange={handleChange}
+                        className={inputClass}
+                      >
+                        {statusOptions.map((o) => (
+                          <option key={o} value={o}>
+                            {o}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <label className={labelClass}>Status BPJS</label>
+                  <select
+                    name="statusBPJS"
+                    value={form.statusBPJS}
+                    onChange={handleChange}
+                    className={inputClass}
+                  >
+                    {statusOptions.map((o) => (
+                      <option key={o} value={o}>
+                        {o}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>
