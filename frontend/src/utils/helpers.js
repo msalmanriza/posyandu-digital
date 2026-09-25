@@ -51,6 +51,19 @@ export const hitungUmur = (tanggalLahir) => {
   return `${tahun} thn ${bulan} bln`;
 };
 
+export const hitungUmurPada = (tanggalLahir, tanggal) => {
+  if (!tanggalLahir || !tanggal) return "-";
+  const lahir = new Date(tanggalLahir);
+  const tgl = new Date(tanggal);
+  let tahun = tgl.getFullYear() - lahir.getFullYear();
+  let bulan = tgl.getMonth() - lahir.getMonth();
+  if (bulan < 0) {
+    tahun--;
+    bulan += 12;
+  }
+  return `${tahun} thn ${bulan} bln`;
+};
+
 export const hitungSkorBarthel = (items = {}) => {
   const bobot = { Tergantung: 0, "Perlu Bantuan": 1, Mandiri: 2 };
   const fields = [
@@ -125,4 +138,33 @@ export const kategoriPUMA = (skor) => {
   if (skor == null) return "";
   if (skor >= 5) return "Risiko Tinggi PPOK";
   return "Risiko Rendah";
+};
+
+export const hitungUmurTahun = (tanggalLahir) => {
+  if (!tanggalLahir) return null;
+  const lahir = new Date(tanggalLahir);
+  const now = new Date();
+  let tahun = now.getFullYear() - lahir.getFullYear();
+  let bulan = now.getMonth() - lahir.getMonth();
+  if (bulan < 0) {
+    tahun -= 1;
+    bulan += 12;
+  }
+  return tahun;
+};
+
+export const kategoriHb = (kadarHb, jenisKelamin, tanggalLahir) => {
+  if (kadarHb == null || kadarHb <= 0 || !tanggalLahir) return "";
+  const usia = hitungUmurTahun(tanggalLahir);
+  if (usia == null) return "";
+
+  let batasAnemia;
+  if (usia < 12) batasAnemia = 11.5;
+  else if (usia < 15) batasAnemia = 12.0;
+  else batasAnemia = jenisKelamin === "L" ? 13.0 : 12.0;
+
+  if (kadarHb >= batasAnemia) return "Normal";
+  if (kadarHb >= 10) return "Anemia Ringan";
+  if (kadarHb >= 7) return "Anemia Sedang";
+  return "Anemia Berat";
 };

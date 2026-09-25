@@ -13,6 +13,7 @@ function ServiceModule({ apiPath, title, description, fields, columns, initialFo
   const [searchParams, setSearchParams] = useSearchParams();
   const [data, setData] = useState([]);
   const [search, setSearch] = useState("");
+  const [quickSearch, setQuickSearch] = useState("");
   const [tanggalFilter, setTanggalFilter] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -119,6 +120,18 @@ function ServiceModule({ apiPath, title, description, fields, columns, initialFo
 
   const colSpan = columns.length + (isAdmin ? 2 : 3);
 
+  const cari = quickSearch.trim().toLowerCase();
+  const visibleData = cari
+    ? data.filter((row) => {
+        const nama = row.peserta?.nama || "";
+        const nik = row.peserta?.nik || "";
+        return (
+          nama.toLowerCase().includes(cari) ||
+          nik.toLowerCase().includes(cari)
+        );
+      })
+    : data;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -139,11 +152,23 @@ function ServiceModule({ apiPath, title, description, fields, columns, initialFo
 
       <div className="bg-white rounded-2xl shadow-sm">
         <div className="p-4 border-b border-gray-100 flex flex-wrap gap-3">
+          <div className="relative flex-1 min-w-[220px] max-w-sm">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
+              🔍
+            </span>
+            <input
+              type="text"
+              value={quickSearch}
+              onChange={(e) => setQuickSearch(e.target.value)}
+              placeholder="Cari nama / NIK peserta (cepat)..."
+              className={`${inputClass} pl-9`}
+            />
+          </div>
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Cari peserta atau catatan..."
+            placeholder="Cari catatan..."
             className={`${inputClass} max-w-xs`}
           />
           <input
@@ -179,14 +204,14 @@ function ServiceModule({ apiPath, title, description, fields, columns, initialFo
                     Memuat data...
                   </td>
                 </tr>
-              ) : data.length === 0 ? (
+              ) : visibleData.length === 0 ? (
                 <tr>
                   <td colSpan={colSpan} className="px-4 py-8 text-center text-gray-400">
-                    Tidak ada data
+                    {cari ? "Tidak ada hasil pencarian" : "Tidak ada data"}
                   </td>
                 </tr>
               ) : (
-                data.map((row, index) => (
+                visibleData.map((row, index) => (
                   <tr key={row._id} className="border-b border-gray-50 hover:bg-gray-50">
                     <td className="px-4 py-3 text-gray-500">{index + 1}</td>
                     <td className="px-4 py-3 text-gray-600 whitespace-nowrap">

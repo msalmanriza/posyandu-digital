@@ -16,6 +16,7 @@ const initialForm = {
   nik: "",
   jenisKelamin: "L",
   tanggalLahir: "",
+  kategori: "Balita",
   beratLahir: "",
   tinggiLahir: "",
   orangTua: "",
@@ -32,6 +33,19 @@ const kategoriOptions = [
   { value: "Lansia", label: "Lansia (60+ thn)" },
 ];
 
+const formKategoriOptions = [
+  { value: "Balita", label: "Balita (1-59 bln)" },
+  { value: "Apras", label: "Apras (6-18 thn)" },
+  { value: "Produktif", label: "Produktif & Dewasa (19-59 thn)" },
+  { value: "Lansia", label: "Lansia (60+ thn)" },
+];
+
+const deteksiKategori = (tanggalLahir) => {
+  if (!tanggalLahir) return "";
+  const k = getKategoriUmur(tanggalLahir);
+  return ["Balita", "Apras", "Produktif", "Lansia"].includes(k) ? k : "";
+};
+
 const kategoriColors = {
   Balita: "bg-primary-100 text-primary-700",
   Apras: "bg-purple-100 text-purple-700",
@@ -46,6 +60,7 @@ function Peserta() {
   const [data, setData] = useState([]);
   const [orangTuas, setOrangTuas] = useState([]);
   const [search, setSearch] = useState("");
+  const [quickSearch, setQuickSearch] = useState("");
   const [kategori, setKategori] = useState("Semua");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -88,6 +103,17 @@ function Peserta() {
       ? data
       : data.filter((row) => getKategoriUmur(row.tanggalLahir) === kategori);
 
+  const cari = quickSearch.trim().toLowerCase();
+  const listData = cari
+    ? filteredData.filter(
+        (row) =>
+          (row.nama || "").toLowerCase().includes(cari) ||
+          (row.nik || "").toLowerCase().includes(cari)
+      )
+    : filteredData;
+
+  const mandiri = form.kategori !== "Balita";
+
   const openCreate = () => {
     setEditing(null);
     setForm(initialForm);
@@ -102,6 +128,7 @@ function Peserta() {
       nik: row.nik || "",
       jenisKelamin: row.jenisKelamin,
       tanggalLahir: formatTanggalInput(row.tanggalLahir),
+      kategori: deteksiKategori(row.tanggalLahir),
       beratLahir: row.beratLahir || "",
       tinggiLahir: row.tinggiLahir || "",
       orangTua: row.orangTua?._id || row.orangTua || "",
@@ -114,7 +141,20 @@ function Peserta() {
   };
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    if (e.target.name === "tanggalLahir") {
+      const detected = deteksiKategori(e.target.value);
+      setForm({
+        ...form,
+        tanggalLahir: e.target.value,
+        kategori: detected || form.kategori,
+      });
+    } else {
+      setForm({ ...form, [e.target.name]: e.target.value });
+    }
+  };
+
+  const handlePilihKategori = (e) => {
+    setForm({ ...form, kategori: e.target.value });
   };
 
   const handleSelectOrangTua = (e) => {
@@ -132,11 +172,24 @@ function Peserta() {
     e.preventDefault();
     setSaving(true);
     setError("");
+const mandiri = form.kategori !== "Balita";
     const payload = {
-      ...form,
-      beratLahir: form.beratLahir ? Number(form.beratLahir) : undefined,
-      tinggiLahir: form.tinggiLahir ? Number(form.tinggiLahir) : undefined,
+      nama: form.nama,
+      nik: form.nik || undefined,
+      jenisKelamin: form.jenisKelamin,
+      tanggalLahir: form.tanggalLahir,
+      alamat: form.alamat || undefined,
+      statusBPJSAnak: form.statusBPJSAnak,
     };
+    if (mandiri) {
+      payload.orangTua = null;
+      payload.namaOrangTua = "";
+    } else {
+      payload.beratLahir = form.beratLahir ? Number(form.beratLahir) : undefined;
+      payload.tinggiLahir = form.tinggiLahir ? Number(form.tinggiLahir) : undefined;
+      payload.orangTua = form.orangTua || undefined;
+      payload.namaOrangTua = form.namaOrangTua || undefined;
+    }
     try {
       if (editing) {
         await api.put(`/peserta/${editing._id}`, payload);
@@ -188,6 +241,18 @@ function Peserta() {
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm p-4 flex flex-wrap gap-3">
+        <div className="relative flex-1 min-w-[220px] max-w-sm">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
+            🔍
+          </span>
+          <input
+            type="text"
+            value={quickSearch}
+            onChange={(e) => setQuickSearch(e.target.value)}
+            placeholder="Cari nama / NIK peserta (cepat)..."
+            className={`${inputClass} pl-9`}
+          />
+        </div>
         <input
           type="text"
           value={search}
@@ -212,13 +277,13 @@ function Peserta() {
 
       {loading ? (
         <div className="text-center py-10 text-gray-400">Memuat data...</div>
-      ) : filteredData.length === 0 ? (
+      ) : listData.length === 0 ? (
         <div className="bg-white rounded-2xl shadow-sm py-12 text-center text-gray-400">
-          Tidak ada data peserta
+          {cari ? "Tidak ada hasil pencarian" : "Tidak ada data peserta"}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredData.map((row) => {
+          {listData.map((row) => {
             const kategoriRow = getKategoriUmur(row.tanggalLahir);
             return (
               <div
@@ -283,12 +348,19 @@ function Peserta() {
                       {row.statusBPJSAnak || "Tidak"}
                     </span>
                   </p>
-                  <p>
-                    Orang Tua:{" "}
-                    <span className="font-medium text-gray-800">
-                      {row.namaOrangTua || "-"}
-                    </span>
-                  </p>
+                  {kategoriRow === "Produktif" || kategoriRow === "Lansia" ? (
+                    <p>
+                      Pendaftaran:{" "}
+                      <span className="font-medium text-gray-800">Mandiri</span>
+                    </p>
+                  ) : (
+                    <p>
+                      Orang Tua:{" "}
+                      <span className="font-medium text-gray-800">
+                        {row.namaOrangTua || "-"}
+                      </span>
+                    </p>
+                  )}
                 </div>
 
                 <div className="mt-4 pt-4 border-t border-gray-100">
@@ -317,20 +389,42 @@ function Peserta() {
               {error}
             </p>
           )}
-          <div>
-            <label className={labelClass}>Nama Balita</label>
-            <input
-              name="nama"
-              value={form.nama}
-              onChange={handleChange}
-              required
-              className={inputClass}
-              placeholder="Nama lengkap balita"
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>
+                {mandiri ? "Nama Lengkap" : "Nama Balita"}
+              </label>
+              <input
+                name="nama"
+                value={form.nama}
+                onChange={handleChange}
+                required
+                className={inputClass}
+                placeholder={mandiri ? "Nama lengkap" : "Nama lengkap balita"}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Kategori Pendaftaran</label>
+              <select
+                name="kategori"
+                value={form.kategori}
+                onChange={handlePilihKategori}
+                className={inputClass}
+              >
+                {formKategoriOptions.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-400 mt-1">
+                Terisi otomatis dari tanggal lahir, bisa diubah manual.
+              </p>
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className={labelClass}>NIK Anak</label>
+              <label className={labelClass}>{mandiri ? "NIK" : "NIK Anak"}</label>
               <input
                 name="nik"
                 value={form.nik}
@@ -366,7 +460,9 @@ function Peserta() {
               />
             </div>
             <div>
-              <label className={labelClass}>Status BPJS Anak</label>
+              <label className={labelClass}>
+                {mandiri ? "Status BPJS" : "Status BPJS Anak"}
+              </label>
               <select
                 name="statusBPJSAnak"
                 value={form.statusBPJSAnak}
@@ -378,64 +474,65 @@ function Peserta() {
               </select>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className={labelClass}>Berat Lahir (kg)</label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                name="beratLahir"
-                value={form.beratLahir}
-                onChange={handleChange}
-                className={inputClass}
-                placeholder="Contoh: 3.2"
-              />
-            </div>
-            <div>
-              <label className={labelClass}>Tinggi Lahir (cm)</label>
-              <input
-                type="number"
-                step="0.1"
-                min="0"
-                name="tinggiLahir"
-                value={form.tinggiLahir}
-                onChange={handleChange}
-                className={inputClass}
-                placeholder="Contoh: 48"
-              />
-            </div>
-          </div>
-          <div>
-            <label className={labelClass}>Orang Tua / Wali</label>
-            <select
-              name="orangTua"
-              value={form.orangTua}
-              onChange={handleSelectOrangTua}
-              className={inputClass}
-            >
-              <option value="">-- Pilih orang tua --</option>
-              {orangTuas.map((ot) => (
-                <option key={ot._id} value={ot._id}>
-                  {ot.nama}
-                </option>
-              ))}
-            </select>
-            <p className="text-xs text-gray-400 mt-1">
-              Pastikan data orang tua sudah terdaftar di menu Orang Tua.
-            </p>
-          </div>
-          {!form.orangTua && (
-            <div>
-              <label className={labelClass}>Nama Orang Tua</label>
-              <input
-                name="namaOrangTua"
-                value={form.namaOrangTua}
-                onChange={handleChange}
-                className={inputClass}
-                placeholder="Nama orang tua langsung"
-              />
-            </div>
+          {!mandiri && (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={labelClass}>Berat Lahir (kg)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    name="beratLahir"
+                    value={form.beratLahir}
+                    onChange={handleChange}
+                    className={inputClass}
+                    placeholder="Contoh: 3.2"
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Tinggi Lahir (cm)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    name="tinggiLahir"
+                    value={form.tinggiLahir}
+                    onChange={handleChange}
+                    className={inputClass}
+                    placeholder="Contoh: 48"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className={labelClass}>Orang Tua / Wali</label>
+                <select
+                  name="orangTua"
+                  value={form.orangTua}
+                  onChange={handleSelectOrangTua}
+                  className={inputClass}
+                >
+                  <option value="">-- Pilih orang tua --</option>
+                  {orangTuas.map((ot) => (
+                    <option key={ot._id} value={ot._id}>
+                      {ot.nama}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {!form.orangTua && (
+                <div>
+                  <label className={labelClass}>Nama Orang Tua</label>
+                  <input
+                    name="namaOrangTua"
+                    value={form.namaOrangTua}
+                    onChange={handleChange}
+                    className={inputClass}
+                    placeholder="Nama orang tua langsung"
+                  />
+                </div>
+              )}
+            </>
           )}
           <div>
             <label className={labelClass}>Alamat</label>

@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import api from "../services/api";
 import { inputClass } from "./ui";
-import { getKategoriUmur } from "../utils/helpers";
+import { hitungUmurTahun } from "../utils/helpers";
 
-function PesertaSelect({
+function PesertaRemajaSelect({
   value,
   onChange,
   name = "peserta",
-  filterKategori,
+  umurMin = 6,
+  umurMax = 18,
   required = true,
 }) {
   const [pesertas, setPesertas] = useState([]);
@@ -35,15 +36,15 @@ function PesertaSelect({
     return () => document.removeEventListener("mousedown", onDocClick);
   }, [open]);
 
-  const list = filterKategori
-    ? pesertas.filter((p) =>
-        Array.isArray(filterKategori)
-          ? filterKategori.includes(getKategoriUmur(p.tanggalLahir))
-          : getKategoriUmur(p.tanggalLahir) === filterKategori
-      )
-    : pesertas;
+  const list = pesertas.filter((p) => {
+    const usia = hitungUmurTahun(p.tanggalLahir);
+    return usia != null && usia >= umurMin && usia <= umurMax;
+  });
 
-  const selected = list.find((p) => p._id === value) || null;
+  const selected =
+    list.find((p) => p._id === value) ||
+    pesertas.find((p) => p._id === value) ||
+    null;
 
   const q = query.trim().toLowerCase();
   const filtered = q
@@ -122,7 +123,7 @@ function PesertaSelect({
           }}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
-          placeholder="Ketik nama / NIK peserta untuk mencari..."
+          placeholder="Ketik nama / NIK peserta (6 - 18 tahun) untuk mencari..."
           className={`${inputClass} pl-9`}
         />
         {selected && (
@@ -197,4 +198,4 @@ function PesertaSelect({
   );
 }
 
-export default PesertaSelect;
+export default PesertaRemajaSelect;

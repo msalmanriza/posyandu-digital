@@ -61,6 +61,29 @@ function clampPositive(v) {
   return Math.max(0, v);
 }
 
+function parseTanggal(value) {
+  if (value == null || value === "") return null;
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}/.test(value)) {
+    const [y, m, d] = value.slice(0, 10).split("-").map(Number);
+    const dt = new Date(y, m - 1, d);
+    return isNaN(dt.getTime()) ? null : dt;
+  }
+  const dt = new Date(value);
+  return isNaN(dt.getTime()) ? null : dt;
+}
+
+function hitungUsiaBulan(birth, tgl) {
+  let bulan =
+    (tgl.getFullYear() - birth.getFullYear()) * 12 +
+    (tgl.getMonth() - birth.getMonth());
+  if (tgl.getDate() < birth.getDate()) bulan -= 1;
+  return Math.max(0, bulan);
+}
+
+function tanggalPanjang(d) {
+  return `${d.getDate()} ${FULL_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+}
+
 const CustomTooltip = ({ active, payload, sex }) => {
   if (!active || !payload?.length) return null;
   const pt = payload.find((p) => p.dataKey === "beratKg");
@@ -91,14 +114,22 @@ const CustomTooltip = ({ active, payload, sex }) => {
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-sm min-w-[200px]">
-      <p className="font-semibold text-gray-800">{d.calendarLabel}</p>
+    <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-sm min-w-[210px]">
+      <p className="font-semibold text-gray-800">
+        Penimbangan: {d.tanggalLabel || d.calendarLabel || "-"}
+      </p>
       <p className="text-gray-600 mt-1">
         Usia Anak: {d.umurBln} Bulan ({d.umurLabel})
       </p>
       <p className="text-gray-600 mt-0.5">
         Berat Badan:{" "}
         <span className="font-semibold text-primary-700">{d.berat} kg</span>
+      </p>
+      <p className="text-gray-600 mt-0.5">
+        Tinggi Badan:{" "}
+        <span className="font-semibold text-gray-800">
+          {d.tinggi != null ? `${d.tinggi} cm` : "-"}
+        </span>
       </p>
       {d.prevBerat != null && (
         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
@@ -183,7 +214,7 @@ function KmsChart({
     return `${bln} bl`;
   };
 
-  const birth = birthDate ? new Date(birthDate) : null;
+  const birth = parseTanggal(birthDate);
   const birthMonth = birth ? birth.getMonth() : null;
   const birthStart = birth ? birth.getFullYear() * 12 + birth.getMonth() : null;
   const refData = sex === "P" ? WHO_FEMALE : WHO_MALE;
@@ -213,35 +244,33 @@ function KmsChart({
 
   const sorted = [...data]
     .filter((m) => m.beratBadan != null)
-    .sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal));
-  const chartData = fullData.map((row) => {
-    const tgl = birth && row.umurBln != null ? sorted.find((m) => {
-      const d = new Date(m.tanggal);
-      return (
-        Math.max(
-          0,
-          (d.getFullYear() - birth.getFullYear()) * 12 +
-            (d.getMonth() - birth.getMonth())
-        ) === row.umurBln
-      );
-    }) : null;
-    if (tgl) {
-      const idx = sorted.findIndex((m) => String(m._id) === String(tgl._id));
-      const prev = idx > 0 ? sorted[idx - 1] : null;
-      const tglDate = new Date(tgl.tanggal);
-      const prevDate = prev ? new Date(prev.tanggal) : null;
-      return {
-        ...row,
-        berat: tgl.beratBadan,
-        beratKg: tgl.beratBadan,
-        prevBerat: prev ? prev.beratBadan : null,
-        prevSameMonth: prevDate
-          ? prevDate.getFullYear() === tglDate.getFullYear() &&
-            prevDate.getMonth() === tglDate.getMonth()
-          : false,
-      };
-    }
-    return row;
+    .sort(
+      (a, b) =>
+        (parseTanggal(a.tanggal)?.getTime() || 0) -
+        (parseTanggal(b.tanggal)?.getTime() || 0)
+    );
+
+  const chartData = fullData.map((row) => ({ ...row }));
+  let prevMeas = null;
+  sorted.forEach((m) => {
+    const d = parseTanggal(m.tanggal);
+    if (!d || !birth) return;
+    const bulan = hitungUsiaBulan(birth, d);
+    if (bulan < 0 || bulan > 60) return;
+    const row = chartData[bulan];
+    if (!row) return;
+    const prevDate = prevMeas ? parseTanggal(prevMeas.tanggal) : null;
+    row.berat = m.beratBadan;
+    row.beratKg = m.beratBadan;
+    row.tinggi = m.tinggiBadan ?? null;
+    row.tanggalLabel = tanggalPanjang(d);
+    row.prevBerat = prevMeas ? prevMeas.beratBadan : null;
+    row.prevSameMonth =
+      prevMeas && prevDate
+        ? prevDate.getFullYear() === d.getFullYear() &&
+          prevDate.getMonth() === d.getMonth()
+        : false;
+    prevMeas = m;
   });
 
   const ticks = Array.from({ length: 61 }, (_, i) => i);
@@ -330,8 +359,8 @@ function KmsChart({
                 stroke="#2563eb"
                 strokeWidth={2.5}
                 connectNulls
-                dot={{ r: 5, fill: "#2563eb", stroke: "#fff", strokeWidth: 2 }}
-                activeDot={{ r: 7, fill: "#2563eb", stroke: "#fff", strokeWidth: 2 }}
+                dot={{ r: 6, fill: "#2563eb", stroke: "#ffffff", strokeWidth: 2 }}
+                activeDot={{ r: 9, fill: "#2563eb", stroke: "#ffffff", strokeWidth: 2 }}
               />
             </ComposedChart>
           </ResponsiveContainer>

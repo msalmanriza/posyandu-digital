@@ -11,7 +11,7 @@ router.use(protect, denyAdminWrite, denyParent);
 const controller = crudController(Attendance, {
   searchFields: ["statusKehadiran"],
   searchRefs: [{ path: "peserta", Model: Peserta, field: "nama" }],
-  populate: { path: "peserta", select: "nama jenisKelamin" },
+  populate: { path: "peserta", select: "nama nik jenisKelamin" },
   activity: {
     modul: "Kehadiran",
     aksi: {

@@ -17,6 +17,7 @@ import Pengumuman from "./pages/Pengumuman";
 import Laporan from "./pages/Laporan";
 import SkriningLansia from "./pages/SkriningLansia";
 import PemeriksaanDewasa from "./pages/PemeriksaanDewasa";
+import PemeriksaanRemaja from "./pages/PemeriksaanRemaja";
 import ParentDashboard from "./pages/ParentDashboard";
 import ParentProfil from "./pages/ParentProfil";
 import ParentPeserta from "./pages/ParentPeserta";
@@ -65,6 +66,7 @@ function App() {
               <Route path="/vitamin" element={<Vitamin />} />
               <Route path="/skrining-lansia" element={<SkriningLansia />} />
               <Route path="/pemeriksaan-dewasa" element={<PemeriksaanDewasa />} />
+              <Route path="/pemeriksaan-remaja" element={<PemeriksaanRemaja />} />
               <Route path="/kehadiran" element={<Kehadiran />} />
               <Route path="/jadwal" element={<Jadwal />} />
               <Route path="/pengumuman" element={<Pengumuman />} />

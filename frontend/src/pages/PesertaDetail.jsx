@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import api from "../services/api";
-import { formatTanggal, hitungUmur, getKategoriUmur, statusSkorBarthel } from "../utils/helpers";
+import { formatTanggal, hitungUmur, hitungUmurPada, getKategoriUmur, statusSkorBarthel } from "../utils/helpers";
+import { KMS_ZONES } from "../utils/kmsReference";
 import KmsChart from "../components/KmsChart";
 
 const kategoriColors = {
@@ -28,13 +29,14 @@ function PesertaDetail() {
   const [attendance, setAttendance] = useState([]);
   const [skrining, setSkrining] = useState([]);
   const [pemeriksaan, setPemeriksaan] = useState([]);
+  const [pemeriksaanRemaja, setPemeriksaanRemaja] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [p, m, i, v, a, s, pds] = await Promise.all([
+        const [p, m, i, v, a, s, pds, pjr] = await Promise.all([
           api.get(`/peserta/${id}`),
           api.get(`/measurements`, { params: { peserta: id } }),
           api.get(`/immunizations`, { params: { peserta: id } }),
@@ -42,6 +44,7 @@ function PesertaDetail() {
           api.get(`/attendance`, { params: { peserta: id } }),
           api.get(`/skrining-lansia`, { params: { peserta: id } }),
           api.get(`/pemeriksaan-dewasa`, { params: { peserta: id } }),
+          api.get(`/pemeriksaan-remaja`, { params: { peserta: id } }),
         ]);
         setPeserta(p.data);
         setMeasurements(m.data);
@@ -50,6 +53,7 @@ function PesertaDetail() {
         setAttendance(a.data);
         setSkrining(s.data);
         setPemeriksaan(pds.data);
+        setPemeriksaanRemaja(pjr.data);
         setError("");
       } catch (err) {
         setError(err.response?.data?.message || "Gagal memuat detail peserta");
@@ -109,12 +113,65 @@ function PesertaDetail() {
 
   const lansia = kategoriRow === "Lansia";
   const dewasa = kategoriRow === "Produktif" || kategoriRow === "Lansia";
+  const remaja = kategoriRow === "Apras";
   if (lansia) {
     statCards.push({
       label: "Skrining Lansia Terakhir",
       value: lastSkrining?.kesimpulan || "Belum ada",
     });
   }
+
+  const gabunganDewasa = dewasa
+    ? [
+        ...pemeriksaan.map((pr) => ({
+          id: pr._id,
+          asal: "pemeriksaan",
+          tanggal: pr.tanggal,
+          td:
+            pr.tdSistolik && pr.tdDiastolik
+              ? `${pr.tdSistolik}/${pr.tdDiastolik}${pr.kategoriTD ? ` (${pr.kategoriTD})` : ""}`
+              : "-",
+          gula:
+            pr.gulaDarah != null
+              ? `${pr.gulaDarah} mg/dl${pr.kategoriGula ? ` (${pr.kategoriGula})` : ""}`
+              : "-",
+          imt:
+            pr.imt != null
+              ? `IMT ${pr.imt}${pr.kategoriIMT ? ` (${pr.kategoriIMT})` : ""}`
+              : pr.lingkarPerut != null
+              ? `LP ${pr.lingkarPerut} cm`
+              : "-",
+          puma:
+            pr.skorPUMA != null
+              ? `${pr.skorPUMA} / 7${pr.kategoriPUMA ? ` (${pr.kategoriPUMA})` : ""}`
+              : "-",
+          kemandirian: "-",
+          keterangan: [
+            pr.topikPenyuluhan ? `Penyuluhan: ${pr.topikPenyuluhan}` : "",
+            pr.catatanRujukan ? `Rujukan: ${pr.catatanRujukan}` : "",
+            pr.catatan || "",
+          ]
+            .filter(Boolean)
+            .join(" · "),
+        })),
+        ...skrining.map((s) => ({
+          id: s._id,
+          asal: "skrining",
+          tanggal: s.tanggal,
+          td: "-",
+          gula: "-",
+          imt: "-",
+          puma: "-",
+          kemandirian:
+            s.skorBarthel != null
+              ? `${s.skorBarthel}/20 — ${statusSkorBarthel(s.skorBarthel)}`
+              : "-",
+          keterangan: [s.kesimpulan ? `Kesimpulan: ${s.kesimpulan}` : "", s.catatan || ""]
+            .filter(Boolean)
+            .join(" · "),
+        })),
+      ].sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal))
+    : [];
 
   return (
     <div className="space-y-6">
@@ -171,6 +228,78 @@ function PesertaDetail() {
       />
 
       <div className="bg-white rounded-2xl shadow-sm p-6">
+        <h2 className="font-semibold text-gray-800 mb-1">Riwayat Penimbangan</h2>
+        <p className="text-sm text-gray-500 mb-4">
+          Data ini tampil sebagai titik koordinat &amp; garis tren (biru) pada
+          Grafik KMS di atas.
+        </p>
+        {measurements.length === 0 ? (
+          <p className="text-sm text-gray-400">Belum ada data penimbangan</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-gray-500 border-b border-gray-100">
+                  <th className="px-4 py-3 font-medium">No</th>
+                  <th className="px-4 py-3 font-medium">Tanggal</th>
+                  <th className="px-4 py-3 font-medium">Umur</th>
+                  <th className="px-4 py-3 font-medium">Berat (kg)</th>
+                  <th className="px-4 py-3 font-medium">Tinggi (cm)</th>
+                  <th className="px-4 py-3 font-medium">Status Gizi</th>
+                  <th className="px-4 py-3 font-medium">Catatan</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...measurements]
+                  .sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal))
+                  .map((m, index) => {
+                    const zona = m.statusGizi
+                      ? KMS_ZONES[m.statusGizi]
+                      : null;
+                    return (
+                      <tr
+                        key={m._id}
+                        className="border-b border-gray-50 hover:bg-gray-50"
+                      >
+                        <td className="px-4 py-3 text-gray-500">{index + 1}</td>
+                        <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
+                          {formatTanggal(m.tanggal)}
+                        </td>
+                        <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
+                          {hitungUmurPada(peserta.tanggalLahir, m.tanggal)}
+                        </td>
+                        <td className="px-4 py-3 font-medium text-gray-800">
+                          {m.beratBadan}
+                        </td>
+                        <td className="px-4 py-3 text-gray-600">
+                          {m.tinggiBadan ?? "-"}
+                        </td>
+                        <td className="px-4 py-3">
+                          {zona ? (
+                            <span
+                              className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
+                                zona.badge || "bg-gray-100 text-gray-600"
+                              }`}
+                            >
+                              {zona.label}
+                            </span>
+                          ) : (
+                            "-"
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-gray-600">
+                          {m.catatan || "-"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      <div className="bg-white rounded-2xl shadow-sm p-6">
         <h2 className="font-semibold text-gray-800 mb-4">Riwayat Terakhir</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="border border-gray-100 rounded-xl p-4">
@@ -212,102 +341,134 @@ function PesertaDetail() {
         </div>
       </div>
 
-      {lansia && (
+      {remaja && (
         <div className="bg-white rounded-2xl shadow-sm p-6">
-          <h2 className="font-semibold text-gray-800 mb-4">
-            Riwayat Skrining Lansia
+          <h2 className="font-semibold text-gray-800 mb-1">
+            Riwayat Pemeriksaan Anak Sekolah &amp; Remaja
           </h2>
-          {skrining.length === 0 ? (
+          <p className="text-sm text-gray-500 mb-4">
+            Data pemeriksaan khusus peserta usia 6 - 18 tahun.
+          </p>
+          {pemeriksaanRemaja.length === 0 ? (
             <p className="text-sm text-gray-400">
-              Belum ada data skrining lansia
+              Belum ada data pemeriksaan anak sekolah &amp; remaja
             </p>
           ) : (
-            <div className="space-y-4">
-              {skrining.map((s) => (
-                <div key={s._id} className="border border-gray-100 rounded-xl p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                    <p className="text-sm font-semibold text-gray-800">
-                      {formatTanggal(s.tanggal)}
-                    </p>
-                    <span
-                      className={`px-2.5 py-1 text-xs font-semibold rounded-full ${
-                        s.kesimpulan === "Rujuk ke Puskesmas"
-                          ? "bg-red-100 text-red-700"
-                          : s.kesimpulan === "Perlu Pemantauan"
-                          ? "bg-amber-100 text-amber-700"
-                          : "bg-green-100 text-green-700"
-                      }`}
-                    >
-                      {s.kesimpulan || "-"}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
-                    <div>
-                      <p className="text-xs text-gray-500">Kemandirian (Barthel)</p>
-                      <p className="font-medium text-gray-800 mt-0.5">
-                        {s.skorBarthel != null
-                          ? `${s.skorBarthel}/20 — ${statusSkorBarthel(s.skorBarthel)}`
-                          : "-"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Kognitif</p>
-                      <p className="font-medium text-gray-800 mt-0.5">
-                        {s.kognitif || "-"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Mobilitas</p>
-                      <p className="font-medium text-gray-800 mt-0.5">
-                        {s.mobilitas || "-"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Malnutrisi</p>
-                      <p className="font-medium text-gray-800 mt-0.5">
-                        {s.malnutrisi || "-"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Penglihatan</p>
-                      <p className="font-medium text-gray-800 mt-0.5">
-                        {s.penglihatan || "-"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Pendengaran</p>
-                      <p className="font-medium text-gray-800 mt-0.5">
-                        {s.pendengaran || "-"}
-                      </p>
-                    </div>
-                  </div>
-
-                  {Array.isArray(s.riwayatPenyakit) && s.riwayatPenyakit.length > 0 && (
-                    <div className="mt-3">
-                      <p className="text-xs text-gray-500 mb-1.5">
-                        Riwayat Penyakit
-                      </p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {s.riwayatPenyakit.map((p) => (
-                          <span
-                            key={p}
-                            className="px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600"
-                          >
-                            {p}
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-gray-500 border-b border-gray-100">
+                    <th className="px-4 py-3 font-medium">No</th>
+                    <th className="px-4 py-3 font-medium">Tanggal</th>
+                    <th className="px-4 py-3 font-medium">Jenis Pemeriksaan</th>
+                    <th className="px-4 py-3 font-medium">
+                      Riwayat Kesehatan / Keluarga
+                    </th>
+                    <th className="px-4 py-3 font-medium">Hasil Penglihatan</th>
+                    <th className="px-4 py-3 font-medium">Hasil Pendengaran</th>
+                    <th className="px-4 py-3 font-medium">Kadar HB</th>
+                    <th className="px-4 py-3 font-medium">Catatan / Rujukan</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[...pemeriksaanRemaja]
+                    .sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal))
+                    .map((row, index) => (
+                      <tr
+                        key={row._id}
+                        className="border-b border-gray-50 hover:bg-gray-50"
+                      >
+                        <td className="px-4 py-3 text-gray-500">{index + 1}</td>
+                        <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
+                          {formatTanggal(row.tanggal)}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-700">
+                            {row.jenis || "-"}
                           </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {s.catatan && (
-                    <p className="mt-3 text-sm text-gray-600">
-                      {s.catatan}
-                    </p>
-                  )}
-                </div>
-              ))}
+                        </td>
+                        <td className="px-4 py-3 max-w-[220px]">
+                          {(Array.isArray(row.riwayatKeluarga) &&
+                            row.riwayatKeluarga.length > 0) ||
+                          (Array.isArray(row.riwayatDiri) &&
+                            row.riwayatDiri.length > 0) ? (
+                            <div className="space-y-1.5">
+                              {Array.isArray(row.riwayatKeluarga) &&
+                                row.riwayatKeluarga.length > 0 && (
+                                  <div className="flex flex-wrap gap-1">
+                                    <span className="text-xs text-gray-400 mr-1">
+                                      Keluarga:
+                                    </span>
+                                    {row.riwayatKeluarga.map((p) => (
+                                      <span
+                                        key={p}
+                                        className="px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600"
+                                      >
+                                        {p}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              {Array.isArray(row.riwayatDiri) &&
+                                row.riwayatDiri.length > 0 && (
+                                  <div className="flex flex-wrap gap-1">
+                                    <span className="text-xs text-gray-400 mr-1">
+                                      Pribadi:
+                                    </span>
+                                    {row.riwayatDiri.map((p) => (
+                                      <span
+                                        key={p}
+                                        className="px-2 py-0.5 rounded-full text-xs bg-blue-50 text-blue-700"
+                                      >
+                                        {p}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                            </div>
+                          ) : (
+                            "-"
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
+                          {row.penglihatanKanan || "-"} / {row.penglihatanKiri || "-"}
+                        </td>
+                        <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
+                          {row.pendengaranKanan || "-"} / {row.pendengaranKiri || "-"}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          {row.kadarHb != null ? (
+                            <>
+                              <span className="text-gray-700">
+                                {row.kadarHb} g/dL
+                              </span>{" "}
+                              {row.statusAnemia && (
+                                <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                                  {row.statusAnemia}
+                                </span>
+                              )}
+                            </>
+                          ) : (
+                            "-"
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-gray-600">
+                          {[
+                            row.topikPenyuluhan
+                              ? `Penyuluhan: ${row.topikPenyuluhan}`
+                              : "",
+                            row.catatanRujukan
+                              ? `Rujukan: ${row.catatanRujukan}`
+                              : "",
+                            row.catatan || "",
+                          ]
+                            .filter(Boolean)
+                            .join(" · ") || "-"}
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
@@ -315,132 +476,64 @@ function PesertaDetail() {
 
       {dewasa && (
         <div className="bg-white rounded-2xl shadow-sm p-6">
-          <h2 className="font-semibold text-gray-800 mb-4">
-            Riwayat Pemeriksaan Dewasa &amp; Lansia
+          <h2 className="font-semibold text-gray-800 mb-1">
+            Riwayat Pemeriksaan Dewasa &amp; Lansia / Skrining Lansia
           </h2>
-          {pemeriksaan.length === 0 ? (
+          <p className="text-sm text-gray-500 mb-4">
+            Data pemeriksaan rutin dewasa dan skrining lansia untuk peserta usia
+            18 tahun ke atas.
+          </p>
+          {gabunganDewasa.length === 0 ? (
             <p className="text-sm text-gray-400">
               Belum ada data pemeriksaan dewasa &amp; lansia
             </p>
           ) : (
-            <div className="space-y-4">
-              {pemeriksaan.map((pr) => (
-                <div key={pr._id} className="border border-gray-100 rounded-xl p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                    <p className="text-sm font-semibold text-gray-800">
-                      {formatTanggal(pr.tanggal)}
-                    </p>
-                    <span
-                      className={`px-2.5 py-1 text-xs font-semibold rounded-full ${
-                        pr.jenis === "Berkala 6 Bulan"
-                          ? "bg-blue-100 text-blue-700"
-                          : pr.jenis === "Berkala Tahunan"
-                          ? "bg-purple-100 text-purple-700"
-                          : "bg-primary-100 text-primary-700"
-                      }`}
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-gray-500 border-b border-gray-100">
+                    <th className="px-4 py-3 font-medium">No</th>
+                    <th className="px-4 py-3 font-medium">Tanggal</th>
+                    <th className="px-4 py-3 font-medium">Tekanan Darah</th>
+                    <th className="px-4 py-3 font-medium">Gula Darah</th>
+                    <th className="px-4 py-3 font-medium">IMT / Lingkar Perut</th>
+                    <th className="px-4 py-3 font-medium">Skor PUMA</th>
+                    <th className="px-4 py-3 font-medium">Kemandirian AKS</th>
+                    <th className="px-4 py-3 font-medium">Keterangan</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {gabunganDewasa.map((row, index) => (
+                    <tr
+                      key={row.id}
+                      className="border-b border-gray-50 hover:bg-gray-50"
                     >
-                      {pr.jenis || "-"}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 text-sm">
-                    <div>
-                      <p className="text-xs text-gray-500">IMT</p>
-                      <p className="font-medium text-gray-800 mt-0.5">
-                        {pr.imt != null
-                          ? `${pr.imt} (${pr.kategoriIMT || "-"})`
-                          : "-"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Tekanan Darah</p>
-                      <p className="font-medium text-gray-800 mt-0.5">
-                        {pr.tdSistolik && pr.tdDiastolik
-                          ? `${pr.tdSistolik}/${pr.tdDiastolik} (${pr.kategoriTD || "-"})`
-                          : "-"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Gula Darah</p>
-                      <p className="font-medium text-gray-800 mt-0.5">
-                        {pr.gulaDarah != null
-                          ? `${pr.gulaDarah} mg/dl (${pr.kategoriGula || "-"})`
-                          : "-"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Skor PUMA</p>
-                      <p
-                        className={`mt-0.5 font-semibold ${
-                          pr.skorPUMA != null && pr.skorPUMA >= 5
-                            ? "text-red-600"
-                            : "text-gray-800"
-                        }`}
-                      >
-                        {pr.skorPUMA != null
-                          ? `${pr.skorPUMA} / 7 (${pr.kategoriPUMA || "-"})`
-                          : "N/A"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Penglihatan</p>
-                      <p className="font-medium text-gray-800 mt-0.5">
-                        {(pr.penglihatanKanan || "-") + " / " + (pr.penglihatanKiri || "-")}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Pendengaran</p>
-                      <p className="font-medium text-gray-800 mt-0.5">
-                        {(pr.pendengaranKanan || "-") + " / " + (pr.pendengaranKiri || "-")}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Gejala TBC</p>
-                      <p className="font-medium text-gray-800 mt-0.5">
-                        {["gejalaBatuk", "gejalaDemam", "penurunanBeratBadan", "kontakTBC"].some(
-                          (k) => pr[k] === "Ya"
-                        )
-                          ? "Ada gejala"
-                          : "Tidak ada"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">KB</p>
-                      <p className="font-medium text-gray-800 mt-0.5">
-                        {pr.alatKontrasepsi || "-"}
-                      </p>
-                    </div>
-                  </div>
-
-                  {Array.isArray(pr.riwayatPenyakitDiri) && pr.riwayatPenyakitDiri.length > 0 && (
-                    <div className="mt-3">
-                      <p className="text-xs text-gray-500 mb-1.5">Riwayat Penyakit Diri</p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {pr.riwayatPenyakitDiri.map((p) => (
-                          <span
-                            key={p}
-                            className="px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600"
-                          >
-                            {p}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {(pr.topikPenyuluhan || pr.catatanRujukan || pr.catatan) && (
-                    <div className="mt-3 text-sm text-gray-600 space-y-1">
-                      {pr.topikPenyuluhan && (
-                        <p>Penyuluhan: {pr.topikPenyuluhan}</p>
-                      )}
-                      {pr.catatanRujukan && (
-                        <p>Rujukan: {pr.catatanRujukan}</p>
-                      )}
-                      {pr.catatan && <p>{pr.catatan}</p>}
-                    </div>
-                  )}
-                </div>
-              ))}
+                      <td className="px-4 py-3 text-gray-500">{index + 1}</td>
+                      <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
+                        {formatTanggal(row.tanggal)}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
+                        {row.td}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
+                        {row.gula}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
+                        {row.imt}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
+                        {row.puma}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
+                        {row.kemandirian}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600 max-w-[280px] break-words">
+                        {row.keterangan || "-"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>

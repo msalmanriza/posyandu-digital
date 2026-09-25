@@ -4,12 +4,13 @@ import { useAuth } from "../../context/AuthContext";
 const kaderMenu = [
   { to: "/dashboard", label: "Dashboard", icon: "🏠" },
   { to: "/orang-tua", label: "Orang Tua", icon: "👨‍👩‍👧" },
-  { to: "/peserta", label: "Peserta Posyandu", icon: "👶" },
+  { to: "/peserta", label: "Peserta Posyandu", icon: "🧑" },
   { to: "/penimbangan", label: "Penimbangan", icon: "⚖️" },
   { to: "/imunisasi", label: "Imunisasi", icon: "💉" },
   { to: "/vitamin", label: "Vitamin", icon: "💊" },
   { to: "/skrining-lansia", label: "Skrining Lansia", icon: "🩺" },
   { to: "/pemeriksaan-dewasa", label: "Periksa Dewasa & Lansia", icon: "🩻" },
+  { to: "/pemeriksaan-remaja", label: "Periksa Anak Sekolah & Remaja", icon: "🎒" },
   { to: "/kehadiran", label: "Kehadiran", icon: "📋" },
   { to: "/jadwal", label: "Jadwal", icon: "📅" },
   { to: "/pengumuman", label: "Pengumuman", icon: "📢" },
@@ -27,6 +28,7 @@ const adminMenu = [
   { to: "/vitamin", label: "Vitamin", icon: "💊", indent: true },
   { to: "/skrining-lansia", label: "Skrining Lansia", icon: "🩺", indent: true },
   { to: "/pemeriksaan-dewasa", label: "Periksa Dewasa & Lansia", icon: "🩻", indent: true },
+  { to: "/pemeriksaan-remaja", label: "Periksa Anak Sekolah & Remaja", icon: "🎒", indent: true },
   { to: "/laporan", label: "Laporan & Export", icon: "📊" },
 ];
 

@@ -139,3 +139,21 @@ export const PUMA_PERTANYAAN = [
   { name: "puBatuk", label: "Biasanya batuk (saat tidak menderita flu)?" },
   { name: "puSpirometri", label: "Pernah disarankan pemeriksaan spirometri / peak flow meter oleh tenaga medis?" },
 ];
+
+export const RIWAYAT_PENYAKIT_REMAJA = [
+  "Hipertensi",
+  "Diabetes Melitus",
+  "Stroke",
+  "Penyakit Jantung",
+  "Asma",
+  "Kanker",
+  "Kolesterol Tinggi",
+];
+
+export const JENIS_PEMERIKSAAN_REMAJA = [
+  "Anamnesis Awal",
+  "Berkala 6 Bulan",
+  "Tahunan Remaja Putri",
+];
+
+export const PANCA_INDRA_REMAJA = ["Normal", "Gangguan"];

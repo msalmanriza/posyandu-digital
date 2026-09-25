@@ -16,7 +16,7 @@ router.use(protect, denyAdminWrite, denyParent);
 const controller = crudController(Measurement, {
   searchFields: ["catatan"],
   searchRefs: [{ path: "peserta", Model: Peserta, field: "nama" }],
-  populate: { path: "peserta", select: "nama jenisKelamin" },
+  populate: { path: "peserta", select: "nama nik jenisKelamin" },
 });
 
 router.route("/").get(controller.getList).post(createMeasurement);

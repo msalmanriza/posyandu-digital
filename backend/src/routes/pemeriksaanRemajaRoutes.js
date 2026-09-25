@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { protect, denyAdminWrite, denyParent } from "../middleware/authMiddleware.js";
-import Vitamin from "../models/Vitamin.js";
+import PemeriksaanRemaja from "../models/PemeriksaanRemaja.js";
 import Peserta from "../models/Peserta.js";
 import crudController from "../utils/crudController.js";
 
@@ -8,18 +8,18 @@ const router = Router();
 
 router.use(protect, denyAdminWrite, denyParent);
 
-const controller = crudController(Vitamin, {
-  searchFields: ["jenisVitamin", "catatan"],
+const controller = crudController(PemeriksaanRemaja, {
+  searchFields: ["jenis", "statusAnemia", "catatanRujukan", "topikPenyuluhan", "catatan"],
   searchRefs: [{ path: "peserta", Model: Peserta, field: "nama" }],
-  populate: { path: "peserta", select: "nama nik jenisKelamin" },
+  populate: { path: "peserta", select: "nama nik jenisKelamin tanggalLahir" },
   activity: {
-    modul: "Vitamin",
+    modul: "Pemeriksaan Anak Sekolah & Remaja",
     aksi: {
-      create: "mencatat vitamin",
-      update: "mengubah vitamin",
-      delete: "menghapus vitamin",
+      create: "mencatat pemeriksaan anak sekolah & remaja",
+      update: "mengubah pemeriksaan anak sekolah & remaja",
+      delete: "menghapus pemeriksaan anak sekolah & remaja",
     },
-    target: (doc) => `${doc.peserta?.nama || ""} (${doc.jenisVitamin || ""})`,
+    target: (doc) => `${doc.peserta?.nama || ""} (${doc.jenis || ""})`,
   },
 });
 

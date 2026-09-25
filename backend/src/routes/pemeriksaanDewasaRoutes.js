@@ -11,7 +11,7 @@ router.use(protect, denyAdminWrite, denyParent);
 const controller = crudController(PemeriksaanDewasa, {
   searchFields: ["jenis", "kategoriPUMA", "catatan", "kategoriIMT"],
   searchRefs: [{ path: "peserta", Model: Peserta, field: "nama" }],
-  populate: { path: "peserta", select: "nama jenisKelamin tanggalLahir" },
+  populate: { path: "peserta", select: "nama nik jenisKelamin tanggalLahir" },
   activity: {
     modul: "Pemeriksaan Dewasa & Lansia",
     aksi: {
