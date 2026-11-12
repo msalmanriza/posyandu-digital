@@ -1,7 +1,7 @@
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import morgan from "morgan";
-import dotenv from "dotenv";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import orangTuaRoutes from "./routes/orangTuaRoutes.js";
@@ -20,13 +20,21 @@ import reportRoutes from "./routes/reportRoutes.js";
 import parentRoutes from "./routes/parentRoutes.js";
 import devRoutes from "./routes/devRoutes.js";
 
-dotenv.config();
 
 connectDB();
 
 const app = express();
 
-app.use(cors());
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+].filter(Boolean);
+
+app.use(
+  cors({
+    origin: allowedOrigins,
+  })
+);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
