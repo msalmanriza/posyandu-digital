@@ -58,6 +58,21 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
 
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    console.error("Failed to connect to MongoDB:", error);
+    res.status(500).json({
+      success: false,
+      message: "Koneksi database gagal, silakan coba beberapa saat lagi.",
+    });
+  }
+});
+
+app.use("/api/auth", authRoutes);
+
 app.use("/api/auth", authRoutes);
 app.use("/api/orang-tua", orangTuaRoutes);
 app.use("/api/peserta", pesertaRoutes);
