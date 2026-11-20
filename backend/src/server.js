@@ -26,12 +26,31 @@ connectDB();
 const app = express();
 
 const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "https://posyandu-digital-lake.vercel.app",
   process.env.FRONTEND_URL,
 ].filter(Boolean);
 
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: function (origin, callback) {
+      // Izinkan request tanpa origin (seperti curl, Postman, atau server-to-server)
+      if (!origin) return callback(null, true);
+
+      const isAllowed =
+        allowedOrigins.includes(origin) ||
+        /^https:\/\/posyandu-digital(-[a-z0-9-]+)?-msalmanrizas-projects\.vercel\.app$/.test(origin) ||
+        /^https:\/\/posyandu-digital(-[a-z0-9-]+)?\.vercel\.app$/.test(origin);
+
+      if (isAllowed) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Not allowed by CORS"));
+    },
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
