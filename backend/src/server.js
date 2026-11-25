@@ -29,6 +29,7 @@ const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
   "https://posyandu-digital-lake.vercel.app",
+  "https://ilpkartini21.vercel.app",
   process.env.FRONTEND_URL,
 ].filter(Boolean);
 
@@ -41,7 +42,8 @@ app.use(
       const isAllowed =
         allowedOrigins.includes(origin) ||
         /^https:\/\/posyandu-digital(-[a-z0-9-]+)?-msalmanrizas-projects\.vercel\.app$/.test(origin) ||
-        /^https:\/\/posyandu-digital(-[a-z0-9-]+)?\.vercel\.app$/.test(origin);
+        /^https:\/\/posyandu-digital(-[a-z0-9-]+)?\.vercel\.app$/.test(origin) ||
+        /^https:\/\/ilpkartini21(-[a-z0-9-]+)?(-msalmanrizas-projects)?\.vercel\.app$/.test(origin);
 
       if (isAllowed) {
         return callback(null, true);
