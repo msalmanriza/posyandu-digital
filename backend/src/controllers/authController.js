@@ -47,6 +47,7 @@ export const registerParent = async (req, res) => {
       nama,
       email,
       password,
+      nik,
       telepon,
       alamat,
       tanggalLahir,
@@ -60,14 +61,23 @@ export const registerParent = async (req, res) => {
       return res.status(400).json({ message: "Nama, email, dan password wajib diisi" });
     }
 
+    const nikBersih = String(req.body.nik || "").trim();
+
+    if (!nikBersih || !/^\d{16}$/.test(nikBersih)) {
+      return res.status(400).json({ message: "NIK wajib diisi dan harus 16 digit angka" });
+    }
+
+    const nikAda = await OrangTua.findOne({ nik: nikBersih });
+    if (nikAda) {
+      return res.status(400).json({ message: "NIK sudah terdaftar" });
+    }
+
     const jk = jenisKelamin === "L" ? "L" : "P";
 
     const userExists = await User.findOne({ email });
     if (userExists) {
       return res.status(400).json({ message: "Email sudah terdaftar" });
     }
-
-    const nik = `900${String(Date.now())}`;
 
     const umur = tanggalLahir
       ? Math.max(
@@ -81,7 +91,7 @@ export const registerParent = async (req, res) => {
 
     const orangTua = await OrangTua.create({
       nama,
-      nik,
+      nik: nikBersih,
       jenisKelamin: jk,
       umur,
       tanggalLahir: tanggalLahir || undefined,

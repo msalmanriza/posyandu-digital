@@ -7,6 +7,7 @@ import PasswordInput from "../components/PasswordInput";
 
 const initialForm = {
   nama: "",
+  nik: "",
   email: "",
   password: "",
   konfirmasiPassword: "",
@@ -59,6 +60,10 @@ function Register() {
       setError("Password dan konfirmasi password tidak sama");
       return;
     }
+    if (form.nik.length !== 16) {
+      setError("NIK harus terdiri dari 16 digit angka");
+      return;
+    }
     setLoading(true);
     try {
       const { konfirmasiPassword, ...payload } = form;
@@ -105,7 +110,7 @@ function Register() {
                 Data Orang Tua
               </h2>
               <div className="space-y-4">
-                <div>
+<div>
                   <label className={labelClass}>Nama Lengkap Orang Tua</label>
                   <input
                     name="nama"
@@ -114,6 +119,23 @@ function Register() {
                     required
                     className={inputClass}
                     placeholder="Nama lengkap Anda"
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>NIK (16 Digit)</label>
+                  <input
+                    name="nik"
+                    value={form.nik}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        nik: e.target.value.replace(/\D/g, "").slice(0, 16),
+                      })
+                    }
+                    required
+                    className={inputClass}
+                    placeholder="16 digit NIK"
+                    maxLength={16}
                   />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
