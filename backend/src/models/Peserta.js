@@ -46,6 +46,10 @@ const pesertaSchema = new mongoose.Schema(
       enum: ["Ya", "Tidak"],
       default: "Tidak",
     },
+    telepon: {
+      type: String,
+      trim: true,
+    },
   },
   {
     timestamps: true,

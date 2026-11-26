@@ -114,6 +114,7 @@ function ParentPesertaDetail() {
   const info = [
     { label: "Jenis Kelamin", value: peserta.jenisKelamin === "L" ? "Laki-laki" : "Perempuan" },
     { label: "Usia", value: hitungUmur(peserta.tanggalLahir) },
+    { label: "No HP / WA", value: peserta.telepon || "-" },
     { label: "Berat Lahir", value: peserta.beratLahir != null ? `${peserta.beratLahir} kg` : "-" },
     { label: "Tinggi Lahir", value: peserta.tinggiLahir != null ? `${peserta.tinggiLahir} cm` : "-" },
     { label: "Status BPJS", value: peserta.statusBPJSAnak || "Tidak" },

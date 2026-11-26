@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 import Modal from "../components/Modal";
 import { inputClass, labelClass } from "../components/ui";
+import OrangTuaSelect from "../components/OrangTuaSelect";
 import {
   formatTanggal,
   formatTanggalInput,
@@ -22,6 +23,7 @@ const initialForm = {
   orangTua: "",
   namaOrangTua: "",
   alamat: "",
+  telepon: "",
   statusBPJSAnak: "Tidak",
 };
 
@@ -134,6 +136,7 @@ function Peserta() {
       orangTua: row.orangTua?._id || row.orangTua || "",
       namaOrangTua: row.namaOrangTua || "",
       alamat: row.alamat || "",
+      telepon: row.telepon || "",
       statusBPJSAnak: row.statusBPJSAnak || "Tidak",
     });
     setError("");
@@ -157,29 +160,18 @@ function Peserta() {
     setForm({ ...form, kategori: e.target.value });
   };
 
-  const handleSelectOrangTua = (e) => {
-    const id = e.target.value;
-    const selected = orangTuas.find((ot) => ot._id === id);
-    setForm({
-      ...form,
-      orangTua: id,
-      namaOrangTua: selected ? selected.nama : "",
-      alamat: selected && !form.alamat ? selected.alamat || "" : form.alamat,
-    });
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
     setError("");
-const mandiri = form.kategori !== "Balita";
-    const payload = {
+const payload = {
       nama: form.nama,
       nik: form.nik || undefined,
       jenisKelamin: form.jenisKelamin,
       tanggalLahir: form.tanggalLahir,
       alamat: form.alamat || undefined,
       statusBPJSAnak: form.statusBPJSAnak,
+      telepon: form.telepon || undefined,
     };
     if (mandiri) {
       payload.orangTua = null;
@@ -506,19 +498,20 @@ const mandiri = form.kategori !== "Balita";
               </div>
               <div>
                 <label className={labelClass}>Orang Tua / Wali</label>
-                <select
-                  name="orangTua"
+                <OrangTuaSelect
                   value={form.orangTua}
-                  onChange={handleSelectOrangTua}
-                  className={inputClass}
-                >
-                  <option value="">-- Pilih orang tua --</option>
-                  {orangTuas.map((ot) => (
-                    <option key={ot._id} value={ot._id}>
-                      {ot.nama}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(id) => {
+                    const selected = orangTuas.find((ot) => ot._id === id);
+                    setForm({
+                      ...form,
+                      orangTua: id,
+                      namaOrangTua: selected ? selected.nama : "",
+                      alamat: selected && !form.alamat ? selected.alamat || "" : form.alamat,
+                    });
+                  }}
+                  orangTuas={orangTuas}
+                  name="orangTua"
+                />
               </div>
               {!form.orangTua && (
                 <div>

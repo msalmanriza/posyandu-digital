@@ -94,6 +94,7 @@ function PesertaDetail() {
   const statCards = [
     { label: "Nama Peserta", value: peserta.nama },
     { label: "Usia", value: hitungUmur(peserta.tanggalLahir) },
+    { label: "No HP / WA", value: peserta.telepon || "-" },
     {
       label: "Berat Terakhir",
       value: lastMeasurement ? `${lastMeasurement.beratBadan} kg` : "-",

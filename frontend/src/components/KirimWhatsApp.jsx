@@ -1,69 +1,254 @@
-import { useEffect, useState } from "react";
+import { SearchIcon } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import api from "../services/api";
-import { formatTanggal, hitungUmur } from "../utils/helpers";
+import { hitungUmur } from "../utils/helpers";
 
 function KirimWhatsApp() {
   const [peserta, setPeserta] = useState([]);
   const [selectedId, setSelectedId] = useState("");
   const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const [highlight, setHighlight] = useState(0);
+  const [invalidMsg, setInvalidMsg] = useState("");
+  const rootRef = useRef(null);
 
   useEffect(() => {
     api
       .get("/peserta")
-      .then(({ data }) => setPeserta(data))
+      .then(({ data }) => setPeserta(Array.isArray(data) ? data : []))
       .catch(() => setPeserta([]))
       .finally(() => setLoading(false));
   }, []);
 
-  const selected = peserta.find((p) => p._id === selectedId);
-  const telepon = selected?.orangTua?.telepon || "";
-  const nomor = telepon.replace(/\D/g, "").replace(/^0/, "62");
+  const normalizedQuery = query.trim().toLowerCase();
+
+  const filtered = normalizedQuery
+    ? peserta.filter((p) => {
+        const nama = (p.nama || "").toLowerCase();
+        const namaOrtu = (p.namaOrangTua || p.orangTua?.nama || "").toLowerCase();
+        const telpPeserta = (p.telepon || "").toLowerCase();
+        const telpOrtu = (p.orangTua?.telepon || "").toLowerCase();
+        return (
+          nama.includes(normalizedQuery) ||
+          namaOrtu.includes(normalizedQuery) ||
+          telpPeserta.includes(normalizedQuery) ||
+          telpOrtu.includes(normalizedQuery)
+        );
+      })
+    : peserta;
+
+  const selected =
+    filtered.find((p) => p._id === selectedId) ||
+    peserta.find((p) => p._id === selectedId);
+
+  const normalizeWa = (raw) => {
+    if (!raw) return "";
+    const digits = String(raw).replace(/\D/g, "");
+    if (!digits) return "";
+    return digits.startsWith("0") ? `62${digits.slice(1)}` : digits;
+  };
+
+  const waNumber =
+    normalizeWa(selected?.telepon) || normalizeWa(selected?.orangTua?.telepon);
+
+  const activeItem =
+    filtered.length > 0
+      ? filtered[Math.min(highlight, filtered.length - 1)]
+      : undefined;
+
+  const selectPeserta = (p) => {
+    setSelectedId(p._id);
+    setQuery("");
+    setOpen(false);
+    setHighlight(0);
+    setInvalidMsg("");
+  };
+
+  const clearSelection = () => {
+    setSelectedId("");
+    setQuery("");
+    setOpen(true);
+    setHighlight(0);
+    setInvalidMsg("");
+  };
+
+  const handleInputChange = (e) => {
+    setQuery(e.target.value);
+    setOpen(true);
+    setHighlight(0);
+    setInvalidMsg("");
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Escape") {
+      setOpen(false);
+      setHighlight(0);
+    } else if (!open && (e.key === "ArrowDown" || e.key === "Enter")) {
+      setOpen(true);
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlight((h) =>
+        filtered.length > 0 ? Math.min(h + 1, filtered.length - 1) : 0
+      );
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlight((h) => Math.max(h - 1, 0));
+    } else if (e.key === "Enter" && open) {
+      if (activeItem) {
+        e.preventDefault();
+        selectPeserta(activeItem);
+      } else {
+        setOpen(false);
+      }
+    }
+  };
+
+  const noResults = open && !loading && filtered.length === 0;
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (rootRef.current && !rootRef.current.contains(event.target)) {
+        setOpen(false);
+        setHighlight(0);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleSend = () => {
-    if (!selected) return;
+    if (!selected || !waNumber) return;
+
     const pesan = [
       `*Ringkasan Anak Posyandu Digital*`,
       ``,
       `Nama: ${selected.nama}`,
       `JK: ${selected.jenisKelamin === "L" ? "Laki-laki" : "Perempuan"}`,
       `Usia: ${hitungUmur(selected.tanggalLahir)}`,
-      `Orang Tua: ${selected.namaOrangTua || "-"}`,
+      `Orang Tua: ${selected.namaOrangTua || selected.orangTua?.nama || "-"}`,
     ]
       .filter(Boolean)
       .join("\n");
 
     window.open(
-      `https://wa.me/${nomor}?text=${encodeURIComponent(pesan)}`,
+      `https://wa.me/${waNumber}?text=${encodeURIComponent(pesan)}`,
       "_blank"
     );
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm p-6">
+    <div className="bg-white rounded-2xl shadow-sm p-6" ref={rootRef}>
       <h2 className="font-semibold text-gray-800 mb-1">
         Kirim Ringkasan ke WhatsApp
       </h2>
       <p className="text-sm text-gray-500 mb-4">
-        Pilih anak, lalu kirim ringkasan datanya ke nomor HP orang tua
+        Pilih anak, lalu kirim ringkasan datanya ke nomor HP peserta atau orang tua
       </p>
-      <div className="flex flex-col sm:flex-row gap-3">
-        <select
-          value={selectedId}
-          onChange={(e) => setSelectedId(e.target.value)}
-          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-        >
-          <option value="">
-            {loading ? "Memuat peserta..." : "-- Pilih Anak / Peserta --"}
-          </option>
-          {peserta.map((p) => (
-            <option key={p._id} value={p._id}>
-              {p.nama} — {p.namaOrangTua || "Tanpa orang tua"}
-            </option>
-          ))}
-        </select>
+
+      <div className="relative">
+        <SearchIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+        <input
+          type="text"
+          role="combobox"
+          aria-expanded={open}
+          aria-autocomplete="list"
+          autoComplete="off"
+          disabled={loading}
+          value={open ? query : selected ? selected.nama : ""}
+          onFocus={() => {
+            setQuery("");
+            setOpen(true);
+          }}
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
+          placeholder={
+            loading
+              ? "Memuat peserta..."
+              : "Cari nama peserta, nama orang tua, atau nomor HP..."
+          }
+          className="w-full pl-9 pr-9 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+        />
+        {selected && !loading && (
+          <button
+            type="button"
+            onClick={clearSelection}
+            title="Hapus pilihan"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm"
+          >
+            ✕
+          </button>
+        )}
+
+        {open && !loading && (
+          <ul
+            role="listbox"
+            className="absolute z-30 mt-1 w-full max-h-64 overflow-auto bg-white border border-gray-200 rounded-lg shadow-lg left-0 right-0"
+          >
+            {noResults ? (
+              <li className="px-3 py-2 text-sm text-gray-400">
+                Tidak ditemukan
+              </li>
+            ) : (
+              filtered.map((p, i) => {
+                const displayOrtu = p.namaOrangTua || p.orangTua?.nama;
+                const displayHp = p.telepon || p.orangTua?.telepon;
+                return (
+                  <li key={p._id}>
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={p._id === selectedId}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => selectPeserta(p)}
+                      className={`w-full text-left px-3 py-2 text-sm hover:bg-primary-50 ${
+                        i === highlight ? "bg-primary-50" : ""
+                      }`}
+                    >
+                      <span className="font-medium text-gray-800">
+                        {p.nama}
+                      </span>
+                      {displayOrtu && (
+                        <span className="ml-2 text-xs text-gray-400">
+                          ({displayOrtu})
+                        </span>
+                      )}
+                      {displayHp && (
+                        <span className="ml-2 text-xs text-gray-500">
+                          HP: {displayHp}
+                        </span>
+                      )}
+                    </button>
+                  </li>
+                );
+              })
+            )}
+          </ul>
+        )}
+      </div>
+
+      {invalidMsg && (
+        <p className="mt-1 text-xs text-red-600">{invalidMsg}</p>
+      )}
+
+      {selected && !waNumber && (
+        <p className="text-xs text-amber-600 mt-2">
+          Tidak ditemukan nomor HP/WA untuk {selected.nama}.
+        </p>
+      )}
+
+      {selected && waNumber && (
+        <p className="text-xs text-gray-400 mt-2">
+          Mengirim ke:{" "}
+          {selected.telepon || selected.orangTua?.telepon || "orang tua"}
+        </p>
+      )}
+
+      <div className="mt-4">
         <button
+          type="button"
           onClick={handleSend}
-          disabled={!selected || !nomor}
+          disabled={!selected || !waNumber}
           className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
         >
           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -72,16 +257,6 @@ function KirimWhatsApp() {
           Kirim Ringkasan ke WhatsApp
         </button>
       </div>
-      {selected && !nomor && (
-        <p className="text-xs text-amber-600 mt-2">
-          Nomor HP orang tua untuk {selected.nama} belum terdaftar.
-        </p>
-      )}
-      {selected && nomor && (
-        <p className="text-xs text-gray-400 mt-2">
-          Mengirim ke: {telepon} ({selected.namaOrangTua || "orang tua"})
-        </p>
-      )}
     </div>
   );
 }
