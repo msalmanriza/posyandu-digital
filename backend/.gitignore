@@ -4,3 +4,8 @@ node_modules/
 npm-debug.log*
 dist/
 .DS_Store
+
+# Abaikan file data seed di folder seed/ (tetap pertahankan importData.js)
+seed/*.json
+seed/*.xlsx
+seed/*.csv
