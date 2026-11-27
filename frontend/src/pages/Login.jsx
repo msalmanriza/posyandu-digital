@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Link, useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import PasswordInput from "../components/PasswordInput";
@@ -23,6 +23,20 @@ const heroSlides = [
   { src: landing3, alt: "Kegiatan Posyandu - Pemeriksaan Anak & Lansia" },
   { src: landing4, alt: "Kegiatan Posyandu - Kader Posyandu" },
 ];
+
+const prefersReducedMotion = typeof window !== "undefined" 
+  ? window.matchMedia("(prefers-reduced-motion: reduce)").matches 
+  : false;
+
+// Kelas animasi hero title berdasarkan preferensi
+const heroTitleAnim = prefersReducedMotion 
+  ? "transition-opacity" 
+  : "transition-opacity duration-500 ease-out";
+
+// Kelas animasi child layanan dengan stagger
+const layananChildAnim = (i) => prefersReducedMotion 
+  ? "transition-all duration-500 ease-out" 
+  : `transition-all duration-500 ease-out ${i * 100}ms`;
 
 const layanan = [
   {
@@ -69,6 +83,8 @@ function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [slide, setSlide] = useState(0);
+  const [animateIn, setAnimateIn] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(
@@ -77,6 +93,22 @@ function Login() {
     );
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setReducedMotion(mq.matches);
+    const listener = () => setReducedMotion(mq.matches);
+    mq.addEventListener("change", listener);
+    return () => mq.removeEventListener("change", listener);
+  }, []);
+
+  // Trigger entrance animation after mount (respect prefers-reduced-motion)
+  useEffect(() => {
+    if (!reducedMotion) {
+      const raf = requestAnimationFrame(() => setAnimateIn(true));
+      return () => cancelAnimationFrame(raf);
+    }
+  }, [reducedMotion]);
 
   if (user) {
     return (
@@ -139,10 +171,10 @@ function Login() {
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
             <div className="absolute inset-0 flex items-end pb-16 px-8 lg:px-12">
               <div className="max-w-md">
-                <h1 className="text-3xl xl:text-4xl font-bold text-white">
+                <h1 className={`text-3xl xl:text-4xl font-bold text-white ${heroTitleAnim}`}>
                   ILPKartini21
                 </h1>
-                <p className="text-white/95 mt-2">
+                <p className={`text-white/95 mt-2 ${heroTitleAnim}`}>
                   Sistem informasi kesehatan terpadu Posyandu Kartini 21 untuk
                   pemantauan tumbuh kembang dan pelayanan kesehatan seluruh
                   siklus hidup keluarga secara akurat, modern, dan terintegrasi.
@@ -173,10 +205,10 @@ function Login() {
               Layanan Posyandu
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {layanan.map((l) => (
+              {layanan.map((l, i) => (
                 <div
                   key={l.judul}
-                  className="bg-primary-50 rounded-2xl p-5 border border-primary-100"
+                  className={`bg-primary-50 rounded-2xl p-5 border border-primary-100 hover:transition-all hover:duration-300 hover:-translate-y-1 hover:shadow-sm ${layananChildAnim(i)}`}
                 >
                   <div className="w-11 h-11 rounded-xl bg-white shadow-sm flex items-center justify-center text-xl mb-3">
                     {l.icon}
@@ -265,7 +297,11 @@ function Login() {
             </p>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-md p-8">
+          <div className="bg-white rounded-2xl shadow-md p-8" style={{ 
+            transition: reducedMotion ? "none" : "all 400ms ease-out",
+            opacity: animateIn ? 1 : 0,
+            transform: animateIn ? "scale(1)" : "scale(0.96)"
+          }}>
             {error && (
               <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm">
                 {error}

@@ -512,7 +512,7 @@ const payload = {
                   orangTuas={orangTuas}
                   name="orangTua"
                 />
-</div>
+              </div>
                <div>
                  <label className={labelClass}>No. HP / WhatsApp</label>
                  <input
@@ -520,7 +520,7 @@ const payload = {
                    value={form.telepon}
                    onChange={handleChange}
                    className={inputClass}
-                   placeholder="08xxxxxxxxxx atau 628xxxxxxxxxx"
+                   placeholder="08......"
                  />
                </div>
              </>
