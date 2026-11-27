@@ -512,20 +512,18 @@ const payload = {
                   orangTuas={orangTuas}
                   name="orangTua"
                 />
-              </div>
-              {!form.orangTua && (
-                <div>
-                  <label className={labelClass}>Nama Orang Tua</label>
-                  <input
-                    name="namaOrangTua"
-                    value={form.namaOrangTua}
-                    onChange={handleChange}
-                    className={inputClass}
-                    placeholder="Nama orang tua langsung"
-                  />
-                </div>
-              )}
-            </>
+</div>
+               <div>
+                 <label className={labelClass}>No. HP / WhatsApp</label>
+                 <input
+                   name="telepon"
+                   value={form.telepon}
+                   onChange={handleChange}
+                   className={inputClass}
+                   placeholder="08xxxxxxxxxx atau 628xxxxxxxxxx"
+                 />
+               </div>
+             </>
           )}
           <div>
             <label className={labelClass}>Alamat</label>

@@ -1,7 +1,7 @@
 import { SearchIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import api from "../services/api";
-import { hitungUmur } from "../utils/helpers";
+import { getKategoriUmur, hitungUmur } from "../utils/helpers";
 
 function KirimWhatsApp() {
   const [peserta, setPeserta] = useState([]);
@@ -10,7 +10,9 @@ function KirimWhatsApp() {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [highlight, setHighlight] = useState(0);
+  const [animateIn, setAnimateIn] = useState(false);
   const [invalidMsg, setInvalidMsg] = useState("");
+  const rafRef = useRef(null);
   const rootRef = useRef(null);
 
   useEffect(() => {
@@ -20,6 +22,18 @@ function KirimWhatsApp() {
       .catch(() => setPeserta([]))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (!loading && !rafRef.current) {
+      rafRef.current = requestAnimationFrame(() => {
+        setAnimateIn(true);
+      });
+    }
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    };
+  }, [loading]);
 
   const normalizedQuery = query.trim().toLowerCase();
 
@@ -120,15 +134,48 @@ function KirimWhatsApp() {
   const handleSend = () => {
     if (!selected || !waNumber) return;
 
+    const kategoriRow =
+      selected.kategori ||
+      (typeof getKategoriUmur === "function"
+        ? getKategoriUmur(selected.tanggalLahir)
+        : "Peserta Posyandu");
+
+    const isBalita = /balita|bayi|anak/i.test(String(kategoriRow));
+    const usiaText = hitungUmur(selected.tanggalLahir);
+    const jkText = selected.jenisKelamin === "L" ? "Laki-laki" : "Perempuan";
+    const kontakText = selected.telepon || selected.orangTua?.telepon || "-";
+
+    const bagianInformasi = isBalita
+      ? [
+          `*Informasi Pertumbuhan & Layanan:*`,
+          `Kami dari *ILP Kartini 21* izin menyampaikan informasi perkembangan serta layanan Posyandu terkait pemantauan pertumbuhan anak, penimbangan rutin, dan kelengkapan imunisasi sesuai usia.`,
+          `Mohon dapat membawa *${selected.nama}* ke Posyandu secara rutin untuk pemantauan tumbuh kembang serta imunisasi berikutnya.`,
+        ]
+      : [
+          `*Informasi Layanan Kesehatan:*`,
+          `Kami dari *ILP Kartini 21* izin menyampaikan informasi layanan Posyandu terkait penimbangan, imunisasi/layanan kesehatan, serta pemantauan kesehatan secara berkala.`,
+          `Mohon dapat hadir kembali ke Posyandu sesuai jadwal layanan maupun imunisasi berikutnya.`,
+        ];
+
     const pesan = [
-      `*Ringkasan Anak Posyandu Digital*`,
+      `Selamat pagi, Bapak/Ibu.`,
       ``,
-      `Nama: ${selected.nama}`,
-      `JK: ${selected.jenisKelamin === "L" ? "Laki-laki" : "Perempuan"}`,
-      `Usia: ${hitungUmur(selected.tanggalLahir)}`,
-      `Orang Tua: ${selected.namaOrangTua || selected.orangTua?.nama || "-"}`,
+      `Kami dari *ILP Kartini 21* izin menyampaikan informasi dari layanan *Posyandu Digital* terkait data dan pemantauan kesehatan peserta berikut:`,
+      ``,
+      `– Nama: ${selected.nama}`,
+      `– Usia: ${usiaText}`,
+      `– Jenis Kelamin: ${jkText}`,
+      `– Kategori: ${kategoriRow}`,
+      `– No. HP/WA: ${kontakText}`,
+      ``,
+      ...bagianInformasi,
+      ``,
+      `Jangan lupa untuk datang kembali ke Posyandu untuk penimbangan dan imunisasi berikutnya, serta konsultasikan kondisi peserta bersama kader Posyandu.`,
+      ``,
+      `Hormat kami,`,
+      `*ILP Kartini 21*`,
     ]
-      .filter(Boolean)
+      .filter((line) => line !== undefined && line !== null)
       .join("\n");
 
     window.open(
@@ -138,12 +185,19 @@ function KirimWhatsApp() {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm p-6" ref={rootRef}>
+    <div
+      className="bg-white rounded-2xl shadow-sm p-6"
+      style={{
+        opacity: animateIn ? 1 : 0,
+        transition: "opacity 500ms ease-in-out",
+      }}
+      ref={rootRef}
+    >
       <h2 className="font-semibold text-gray-800 mb-1">
         Kirim Ringkasan ke WhatsApp
       </h2>
       <p className="text-sm text-gray-500 mb-4">
-        Pilih anak, lalu kirim ringkasan datanya ke nomor HP peserta atau orang tua
+        Pilih peserta, lalu kirim ringkasan datanya ke nomor HP peserta atau orang tua
       </p>
 
       <div className="relative">
